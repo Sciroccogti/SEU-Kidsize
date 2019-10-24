@@ -1,0 +1,4 @@
+---
+int32 camera_type
+int32 width
+int32 height

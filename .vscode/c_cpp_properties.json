@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/opt/ros/melodic/include/**",
+                "/usr/include/**",
+                "/usr/local/cuda/include/**",
+                "${workspaceFolder}/devel/include/**",
+                "${workspaceFolder}/src/common/include/**",
+                "${workspaceFolder}/src/robot/include/**",
+                "${workspaceFolder}/src/libraries/seumath/include/**",
+                "${workspaceFolder}/src/libraries/seuimage/include/**",
+                "${workspaceFolder}/src/libraries/darknet/include/**"
+            ],
+            "defines": [
+                "GPU",
+                "CUDNN"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
