@@ -73,7 +73,7 @@ namespace robot
         {"head", MOTION_HEAD}
     };
 
-    inline std::string get_nameby_motion(const RobotMotion &motion)
+    inline std::string get_name_by_motion(const RobotMotion &motion)
     {
         for (auto &nm : namemotion_map)
         {
@@ -150,6 +150,7 @@ namespace robot
     typedef std::map<RobotMotion, RobotPose> PoseMap;
 
     bool parse(std::string act_file, ActMap &acts, PosMap &poses);
+    void save(const std::string &act_file, const ActMap &acts, const PosMap &poses);
 
     class Robot
     {
@@ -233,6 +234,11 @@ namespace robot
             if(it == bone_map_.end())
                 return BonePtr();
             return it->second;
+        }
+
+        int joint_count()
+        {
+            return joint_map_.size();
         }
 
     public:

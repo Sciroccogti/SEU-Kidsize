@@ -12,7 +12,7 @@
 class WalkEngine
 {
 public:
-    WalkEngine(ros::Publisher &pub);
+    WalkEngine();
     void runWalk(Eigen::Vector3d p, int steps, double& phase, double& time);
     
 private:
@@ -20,7 +20,6 @@ private:
     double time_length_;
     double XOffset_, YOffset_, DOffset_;
     Rhoban::IKWalkParameters params_;
-    ros::Publisher &bodyPublisher_;
     Eigen::Vector2d xrange_, yrange_, drange_;
 };
 

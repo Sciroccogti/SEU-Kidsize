@@ -67,6 +67,8 @@ add_service_files(
   BoneLength.srv
   CameraInfo.srv
   Kinematics.srv
+  VirtualRobot.srv
+  AddAngles.srv
 )
 
 ## Generate actions in the 'action' folder

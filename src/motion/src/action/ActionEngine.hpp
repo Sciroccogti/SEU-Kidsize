@@ -9,7 +9,7 @@
 class ActionEngine
 {
 public:
-    ActionEngine(ros::Publisher &pub);
+    ActionEngine();
     bool runAction(std::string act);
 
 private:
@@ -22,7 +22,6 @@ private:
 private:
     robot::ActMap act_map_;
     robot::PosMap pos_map_;
-    ros::Publisher &bodyPublisher_;
 };
 
 #endif

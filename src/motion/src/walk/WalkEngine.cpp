@@ -9,12 +9,13 @@
 #include <common/BoneLength.h>
 #include <common/basic_parser.hpp>
 #include <common/BodyAngles.h>
+#include <common/AddAngles.h>
 
 using namespace Eigen;
 using namespace seumath;
 using namespace std;
 
-WalkEngine::WalkEngine(ros::Publisher &pub): bodyPublisher_(pub)
+WalkEngine::WalkEngine()
 {
     ros::service::waitForService("/paramservice");
     std::string cfgfile;
@@ -25,6 +26,7 @@ WalkEngine::WalkEngine(ros::Publisher &pub): bodyPublisher_(pub)
         ROS_ERROR("%s", e.what());
         return;
     }
+    ROS_INFO("walk file: %s", cfgfile.c_str());
     common::bpt::ptree pt;
     bool ret = common::parse_file(cfgfile, pt);
     if(!ret) return;
@@ -243,7 +245,9 @@ void WalkEngine::runWalk(Eigen::Vector3d p, int steps, double& phase, double& ti
     params_.lateralGain += YOffset_;
     params_.turnGain = deg2rad(params_.turnGain)-deg2rad(DOffset_);
 
-    common::BodyAngles bAngles;
+    common::AddAngles addSrv;
+    addSrv.request.part = "body";
+    common::BodyAngles &bAngles = addSrv.request.body;
     Rhoban::IKWalkOutputs outputs;
     std::map<int, float> jdegs;
     for (double t=0.0;t<=steps*time_length_;t+=1.0/engine_frequency_) 
@@ -271,8 +275,10 @@ void WalkEngine::runWalk(Eigen::Vector3d p, int steps, double& phase, double& ti
             bAngles.left_elbow = -170;
             bAngles.right_shoulder = 0;
             bAngles.right_elbow = 170;
-            
-            bodyPublisher_.publish(bAngles);
+            ros::service::call("/addangles", addSrv);
+        }
+        else{
+            ROS_WARN("kinematics failed");
         }
     }
 }

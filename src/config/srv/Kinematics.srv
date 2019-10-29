@@ -1,0 +1,11 @@
+int32 part
+geometry_msgs/Transform body
+geometry_msgs/Transform end
+int32 RIGHT_HAND = 1
+int32 LEFT_HAND = 2
+int32 CENTER_BODY = 3
+int32 RIGHT_FOOT = 4
+int32 LEFT_FOOT = 5
+---
+bool success
+float32[6] degs

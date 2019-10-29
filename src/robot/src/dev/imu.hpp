@@ -9,6 +9,7 @@
 #include <eigen3/Eigen/Dense>
 #include <common/ImuData.h>
 #include <serial/serial.h>
+#include "common.hpp"
 
 class Imu
 {

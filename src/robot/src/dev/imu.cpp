@@ -29,28 +29,6 @@ Imu::Imu(): pitch_range_(-30.0, 40.0), roll_range_(-40.0, 40.0)
     status = kStatus_Idle;
 }
 
-void crc16_update(uint16_t *currectCrc, const uint8_t *src, uint32_t lengthInBytes)
-{
-    uint32_t crc = *currectCrc;
-    uint32_t j;
-    for (j=0; j < lengthInBytes; ++j)
-    {
-        uint32_t i;
-        uint32_t byte = src[j];
-        crc ^= byte << 8;
-        for (i = 0; i < 8; ++i)
-        {
-            uint32_t temp = crc << 1;
-            if (crc & 0x8000)
-            {
-                temp ^= 0x1021;
-            }
-            crc = temp;
-        }
-    } 
-    *currectCrc = crc;
-}
-
 enum ItemID_t
 {
     kItemKeyStatus =            0x80,   /* key status           size: 4 */
@@ -242,7 +220,7 @@ bool Imu::start()
     }
     catch(serial::IOException &e)
     {
-        ROS_ERROR("open serial port failed: %s", e.what());
+        ROS_WARN("open (%s) failed: %s", imu_dev_name.c_str(), e.what());
         return false;
     }
     if(!serial_.isOpen())

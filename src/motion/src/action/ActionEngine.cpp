@@ -1,6 +1,7 @@
 #include "ActionEngine.hpp"
 #include <ros/ros.h>
 #include <common/Kinematics.h>
+#include <common/AddAngles.h>
 
 using namespace robot;
 using namespace seumath;
@@ -15,7 +16,7 @@ static void PoseToTrans(const RobotPose &pose, geometry_msgs::Transform &trans)
     trans.rotation.z = pose.yaw;
 }
 
-ActionEngine::ActionEngine(ros::Publisher &pub): bodyPublisher_(pub)
+ActionEngine::ActionEngine()
 {
     ros::service::waitForService("/paramservice");
     std::string act_file;
@@ -26,6 +27,7 @@ ActionEngine::ActionEngine(ros::Publisher &pub): bodyPublisher_(pub)
         ROS_ERROR("%s", e.what());
         return;
     }
+    ROS_INFO("action_file: %s", act_file.c_str());
     parse(act_file, act_map_, pos_map_);
 }
 
@@ -37,7 +39,9 @@ bool ActionEngine::runAction(std::string act)
         ROS_ERROR("can not find act: %s", act.c_str());
         return false;
     }
-    common::BodyAngles bAngles;
+    common::AddAngles addSrv;
+    addSrv.request.part = "body";
+    common::BodyAngles &bAngles = addSrv.request.body;
     std::vector<PoseMap> poses_temp;
     std::vector<int> pos_times_temp;
     std::vector<robot::RobotOnePos> poses=iter->second.poses;
@@ -56,7 +60,7 @@ bool ActionEngine::runAction(std::string act)
 
     bool ret = get_degs(pos1, bAngles);
     if(!ret) return false;
-    bodyPublisher_.publish(bAngles);
+    ros::service::call("/addangles", addSrv);
     if(poses_temp.size()<2) return true;
     for (int i = 1; i < poses_temp.size(); i++)
     {
@@ -71,7 +75,7 @@ bool ActionEngine::runAction(std::string act)
         {
             ret = get_degs(pos1, bAngles);
             if(!ret) return false;
-            bodyPublisher_.publish(bAngles);
+            ros::service::call("/addangles", addSrv);
         }
     }
     return true;
@@ -84,7 +88,11 @@ bool ActionEngine::get_degs(robot::PoseMap &act_pose,  common::BodyAngles &bAngl
     PoseToTrans(act_pose[MOTION_LEFT_FOOT], ik.request.end);
     ik.request.part = ik.request.LEFT_FOOT;
     ros::service::call("/kinematics", ik);
-    if(!ik.response.success) return false;
+    if(!ik.response.success) 
+    {
+        ROS_WARN("left foot kinematics failed");
+        return false;
+    }
     bAngles.left_hip_yaw = rad2deg(ik.response.degs[0]);
     bAngles.left_hip_roll = rad2deg(ik.response.degs[1]);
     bAngles.left_hip_pitch = rad2deg(ik.response.degs[2]);
@@ -95,7 +103,11 @@ bool ActionEngine::get_degs(robot::PoseMap &act_pose,  common::BodyAngles &bAngl
     PoseToTrans(act_pose[MOTION_RIGHT_FOOT], ik.request.end);
     ik.request.part = ik.request.RIGHT_FOOT;
     ros::service::call("/kinematics", ik);
-    if(!ik.response.success) return false;
+    if(!ik.response.success) 
+    {
+        ROS_WARN("right foot kinematics failed");
+        return false;
+    }
     bAngles.right_hip_yaw = rad2deg(ik.response.degs[0]);
     bAngles.right_hip_roll = rad2deg(ik.response.degs[1]);
     bAngles.right_hip_pitch = rad2deg(ik.response.degs[2]);
@@ -106,15 +118,23 @@ bool ActionEngine::get_degs(robot::PoseMap &act_pose,  common::BodyAngles &bAngl
     PoseToTrans(act_pose[MOTION_LEFT_HAND], ik.request.end);
     ik.request.part = ik.request.LEFT_HAND;
     ros::service::call("/kinematics", ik);
-    if(!ik.response.success) return false;
+    if(!ik.response.success)
+    {
+        ROS_WARN("left hand kinematics failed");
+        return false;
+    }
     bAngles.left_shoulder = rad2deg(ik.response.degs[0]);
-    bAngles.left_elbow = rad2deg(ik.response.degs[2]);
+    bAngles.left_elbow = rad2deg(ik.response.degs[1]);
     PoseToTrans(act_pose[MOTION_RIGHT_HAND], ik.request.end);
     ik.request.part = ik.request.RIGHT_HAND;
     ros::service::call("/kinematics", ik);
-    if(!ik.response.success) return false;
+    if(!ik.response.success) 
+    {
+        ROS_WARN("right hand kinematics failed");
+        return false;
+    }
     bAngles.right_shoulder = rad2deg(ik.response.degs[0]);
-    bAngles.right_elbow = rad2deg(ik.response.degs[2]);
+    bAngles.right_elbow = rad2deg(ik.response.degs[1]);
     return true;
 }
 

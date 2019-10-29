@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="id" value="0" doc="robot number"/>
+  <arg name="cfg" value="$(find config)/conf/config.conf" doc="root config file"/>
+  <node pkg="config" type="params" name="params" args="$(arg id) $(arg cfg)" output="screen"/>
+</launch>

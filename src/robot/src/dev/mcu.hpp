@@ -5,13 +5,14 @@
 #include <serial/serial.h>
 #include <thread>
 #include <mutex>
+#include "common.hpp"
 
 #define MAX_MCU_BUFF_LEN 256
 
 class Mcu
 {
 public:
-    enum InstType
+    enum
     {
         REQ_DATA = 1,
         ACK_DATA = 2,
@@ -25,10 +26,15 @@ public:
         uint8_t data[MAX_MCU_BUFF_LEN];
     };
 
-    McuPacket readPacket();
+    McuPacket readRequest();
+    void sendPacket(const McuPacket &pkt);
 
     bool open();
     void close();
+    bool isOpen()
+    {
+        return serial_.isOpen();
+    }
 private:
     serial::Serial serial_;
     uint8_t buffer[MAX_MCU_BUFF_LEN];

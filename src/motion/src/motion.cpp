@@ -17,9 +17,9 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "motion");
     ros::NodeHandle node;
-    ros::Publisher bodyPublisher = node.advertise<common::BodyAngles>("/bodyangles", 1);
-    actionEng = std::make_shared<ActionEngine>(bodyPublisher);
-    walkEng = std::make_shared<WalkEngine>(bodyPublisher);
+    ros::service::waitForService("/addangles");
+    actionEng = std::make_shared<ActionEngine>();
+    walkEng = std::make_shared<WalkEngine>();
 
     Eigen::Vector3d step(0.0, 0.0, 0.0);
     double phase = 0.0, time = 0.0; 
@@ -28,10 +28,11 @@ int main(int argc, char **argv)
     bodyQue.request.name = "body";
     while (ros::ok())
     {
-        ros::service::call("/bodyangles", bodyQue);
+        ros::service::call("/queuesize", bodyQue);
         if(bodyQue.response.size>5) usleep(5000);
         else{
             walkEng->runWalk(step, 2, phase, time);
+            //actionEng->runAction("ready");
         }
     }
     return 0;

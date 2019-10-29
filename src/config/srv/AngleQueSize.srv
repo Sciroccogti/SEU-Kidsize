@@ -1,0 +1,5 @@
+int32 queue_type
+int32 BODY_ANGLES=1
+int32 HEAD_ANGLES=2
+---
+int32 size

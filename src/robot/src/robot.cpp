@@ -1,5 +1,7 @@
 #include <robot/robot.hpp>
 #include <common/basic_parser.hpp>
+#include <ros/ros.h>
+#include <unordered_set>
 
 namespace robot
 {
@@ -11,9 +13,9 @@ namespace robot
     using namespace seumath;
     using namespace common;
 
-    extern robot::JointPtr parse_joint(const std::string &j_name, const bpt::ptree &pt, 
+    robot::JointPtr parse_joint(const std::string &j_name, const bpt::ptree &pt, 
                             robot::BoneMap &BoneMap, robot::JointMap &JointMap);
-    extern robot::BonePtr parse_bone(const bpt::ptree &pt, robot::BoneMap &BoneMap, 
+    robot::BonePtr parse_bone(const bpt::ptree &pt, robot::BoneMap &BoneMap, 
                             robot::JointMap &JointMap);
 
     static RobotPose get_pose_from_string(std::string str)
@@ -108,6 +110,56 @@ namespace robot
             acts[t_act.name] = t_act;
         }
         return true;
+    }
+
+    std::string get_string_from_pose(const RobotPose &pose)
+    {
+        std::string str="";
+        str += (std::to_string(pose.x)+" ");
+        str += (std::to_string(pose.y)+" ");
+        str += (std::to_string(pose.z)+" ");
+        str += (std::to_string(pose.pitch)+" ");
+        str += (std::to_string(pose.roll)+" ");
+        str += (std::to_string(pose.yaw));;
+        return str;
+    }
+
+    void save(const std::string &act_file, const ActMap &acts, const PosMap &poses)
+    {
+        bpt::ptree pt;
+        bpt::ptree act_pt, pos_pt;
+        
+        std::unordered_set<std::string> saved_poses;
+
+        bpt::ptree act_info_child;
+        bpt::ptree pos_info_child;
+        
+        for (auto &act : acts)
+        {
+            act_info_child.clear();
+
+            for (size_t i = 0; i < act.second.poses.size(); i++)
+            {
+                std::string pos_name = act.second.poses[i].pos_name;
+                act_info_child.add<int>(pos_name, act.second.poses[i].act_time);
+                if(saved_poses.find(pos_name)!=saved_poses.end()) 
+                    continue;
+                pos_info_child.clear();
+                auto pos_iter = poses.find(pos_name);
+                for (auto &p_info : pos_iter->second.pose_info)
+                {
+                    pos_info_child.add(get_name_by_motion(p_info.first), get_string_from_pose(p_info.second));
+                }
+                pos_pt.add_child(pos_name, pos_info_child);
+                saved_poses.insert(pos_name);
+            }
+
+            act_pt.add_child(act.second.name, act_info_child);
+        }
+
+        pt.add_child(acts_key_, act_pt);
+        pt.add_child(poses_key_, pos_pt);
+        write_tree_to_file(act_file, pt);
     }
 
 
@@ -239,9 +291,10 @@ namespace robot
         Vector3d p11 = body.P() + body.R() * Vector3d(0, sg * hip_distance / 2.0, 0);
         Vector3d r = foot.R().transpose() * (p11 - p16);
         double Lr = r.norm();
-
+        
         if (Lr > thigh_length + shank_length)
         {
+            ROS_ERROR("%s: Lr > thigh_length + shank_length  %f %f %f", left?"left":"right", Lr, thigh_length, shank_length);
             return false;
         }
 

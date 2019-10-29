@@ -1,0 +1,2 @@
+bool btn1_status
+bool btn2_status

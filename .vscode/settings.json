@@ -3,6 +3,7 @@
         "/opt/ros/melodic/lib/python2.7/dist-packages"
     ],
     "files.associations": {
+        "*.conf": "json",
         "cctype": "cpp",
         "clocale": "cpp",
         "cmath": "cpp",
@@ -75,6 +76,7 @@
         "thread": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "qtwidgets": "cpp"
     }
 }
