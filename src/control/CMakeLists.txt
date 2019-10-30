@@ -1,18 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(motion)
+project(control)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   common
-  robot
   roscpp
   rospy
-  seumath
 )
 
 ## System dependencies are found with CMake's conventions
@@ -106,8 +104,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES motion
-#  CATKIN_DEPENDS common robot roscpp rospy seumath
+#  LIBRARIES control
+#  CATKIN_DEPENDS common roscpp rospy
 #  DEPENDS system_lib
 )
 
@@ -124,7 +122,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/motion.cpp
+#   src/${PROJECT_NAME}/control.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -135,21 +133,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-set(WALK_FILES  src/walk/WalkEngine.cpp
-  src/walk/CubicSpline.cpp
-  src/walk/SmoothSpline.cpp
-  src/walk/HumanoidModel.cpp
-  src/walk/IKWalk.cpp
-  src/walk/LegIK.cpp
-  src/walk/Polynom.cpp
-  src/walk/Spline.cpp
-)
-
-set(ACT_FILES src/action/ActionEngine.cpp)
-
-set(SCAN_FILES src/scan/ScanEngine.cpp)
-
-add_executable(motion src/motion.cpp ${WALK_FILES} ${ACT_FILES} ${SCAN_FILES})
+# add_executable(${PROJECT_NAME}_node src/control_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -162,11 +146,9 @@ add_executable(motion src/motion.cpp ${WALK_FILES} ${ACT_FILES} ${SCAN_FILES})
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(motion
-  ${catkin_LIBRARIES}
-  common
-  robot
-)
+# target_link_libraries(${PROJECT_NAME}_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -215,7 +197,7 @@ target_link_libraries(motion
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_motion.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_control.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

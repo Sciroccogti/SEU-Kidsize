@@ -4,7 +4,8 @@
 import sys
 import os
 import common
-from PyQt5 import QtWidgets
+import config
+from PyQt5 import QtWidgets, QtCore
 import SSH
 
 class TerminalWidget(QtWidgets.QWidget):
@@ -34,71 +35,79 @@ class TerminalWidget(QtWidgets.QWidget):
 
 
 class EasyWindow(QtWidgets.QMainWindow):
-    def __init__(self):
+    closed  = QtCore.pyqtSignal(str)
+    def __init__(self, mid):
         super().__init__()
-        mypath = os.path.realpath(__file__)
-        self._root = mypath[:mypath.find('/src/tools')]
-        self._init_ui()
+        self._id = mid
+        self._host = common.get_config(config.conf_file, 'players.{}.address'.format(self._id))
         self._ssh = None
         self._connected = False
         self._shell = None
+        try:
+            self._ssh = SSH.SSH(self._host, config.username, config.password)
+            self._shell = self._ssh.create_shell()
+            self._connected = True
+        except Exception as e:
+            print(e.args)
+        self._init_ui()
+        if self._connected:
+            self._statusBar.showMessage('connected to {}@{}'.format(config.username, self._host))
+        else:
+            self._statusBar.showMessage('connected to {}@{} failed'.format(config.username, self._host))
+            
 
-    def _init_ui(self):
-        self.setWindowTitle('EasyStart')
+    def _init_ui(self):                
+        self.setWindowTitle('EasyStart: {}'.format(self._id))
         mainWidget = QtWidgets.QWidget()
         mainLayout = QtWidgets.QVBoxLayout()
-        self._idSpin = QtWidgets.QSpinBox()
-        self._idSpin.setRange(0, 5)
-        files = os.listdir(self._root+'/src')
+        files = os.listdir(config.local_root+'/src')
         srcGroup = QtWidgets.QGroupBox("Source Files")
         gboxLayout = QtWidgets.QVBoxLayout()
         self._srcCheckBoxes = []
         for f in files:
-            if not os.path.isdir(self._root+'/src/'+f):
+            if not os.path.isdir(config.local_root+'/src/'+f):
                 continue
             box = QtWidgets.QCheckBox(f)
             self._srcCheckBoxes.append(box)
             gboxLayout.addWidget(box)
         srcGroup.setLayout(gboxLayout)
-        idLayout = QtWidgets.QHBoxLayout()
-        idLayout.addWidget(QtWidgets.QLabel('Player ID:'))
-        idLayout.addWidget(self._idSpin)
         leftLayout = QtWidgets.QVBoxLayout()
-        leftLayout.addLayout(idLayout)
         leftLayout.addWidget(srcGroup)
-
-        self._connBtn = QtWidgets.QPushButton('Connect')
-        self._connBtn.clicked.connect(self.proc_btn_connect)
 
         self._uploadLocalLine = QtWidgets.QLineEdit()
         self._uploadLocalLine.setPlaceholderText('local path')
+        self._ulRealCheck = QtWidgets.QCheckBox('realpath')
         self._uploadRemoteLine = QtWidgets.QLineEdit()
         self._uploadRemoteLine.setPlaceholderText('remote path')
+        self._urRealCheck = QtWidgets.QCheckBox('realpath')
         self._uploadBtn = QtWidgets.QPushButton('Upload')
-        self._uploadBtn.setEnabled(False)
         self._uploadBtn.clicked.connect(self.proc_btn_upload)
         uploadLayout = QtWidgets.QHBoxLayout()
         uploadLayout.addWidget(self._uploadLocalLine)
+        uploadLayout.addWidget(self._ulRealCheck)
         uploadLayout.addWidget(self._uploadRemoteLine)
+        uploadLayout.addWidget(self._urRealCheck)
         uploadLayout.addWidget(self._uploadBtn)
 
         self._downloadRemoteLine = QtWidgets.QLineEdit()
         self._downloadRemoteLine.setPlaceholderText('remote path')
+        self._drRealCheck = QtWidgets.QCheckBox('realpath')
         self._downloadLocalLine = QtWidgets.QLineEdit()
         self._downloadLocalLine.setPlaceholderText('local path')
+        self._dlRealCheck = QtWidgets.QCheckBox('realpath')
         self._downloadBtn = QtWidgets.QPushButton('Download')
-        self._downloadBtn.setEnabled(False)
         self._downloadBtn.clicked.connect(self.proc_btn_download)
         downloadLayout = QtWidgets.QHBoxLayout()
         downloadLayout.addWidget(self._downloadRemoteLine)
+        downloadLayout.addWidget(self._drRealCheck)
         downloadLayout.addWidget(self._downloadLocalLine)
+        downloadLayout.addWidget(self._dlRealCheck)
         downloadLayout.addWidget(self._downloadBtn)
 
         self._inputBox = QtWidgets.QTextEdit()
         self._inputBox.setAcceptRichText(False)
         self._tabWidget = QtWidgets.QTabWidget()
         rightLayout = QtWidgets.QVBoxLayout()
-        rightLayout.addWidget(self._connBtn)
         rightLayout.addLayout(uploadLayout)
         rightLayout.addLayout(downloadLayout)
         rightLayout.addWidget(self._tabWidget)
@@ -126,12 +135,11 @@ class EasyWindow(QtWidgets.QMainWindow):
     def proc_btn_connect(self):
         if not self._connected:
             try:
-                self._ssh = SSH.SSH('192.168.0.11', 'robocup', 'robocup')
+                self._ssh = SSH.SSH(self._host, config.username, config.password)
                 self._shell = self._ssh.create_shell()
                 self._connected = True
                 self._connBtn.setText('Disconnect')
-                self._statusBar.showMessage('connected to {}@{}'.format('robocup', '192.168.0.11'))
-                self._idSpin.setEnabled(False)
+                self._statusBar.showMessage('connected to {}@{}'.format(config.username, self._host))
                 self._uploadBtn.setEnabled(True)
                 self._downloadBtn.setEnabled(True)
             except Exception as e:
@@ -143,7 +151,6 @@ class EasyWindow(QtWidgets.QMainWindow):
             self._statusBar.showMessage('')
             self._ssh = None
             self._shell = None
-            self._idSpin.setEnabled(True)
             self._uploadBtn.setEnabled(False)
             self._downloadBtn.setEnabled(False)
 
@@ -157,21 +164,71 @@ class EasyWindow(QtWidgets.QMainWindow):
     def proc_btn_rm_term(self):
         self._tabWidget.removeTab(self._tabWidget.currentIndex())
 
+    def transport_status(self, trans, total):
+        self._statusBar.showMessage("transport: {:.2f}%".format(float(trans)/total*100))
+        QtWidgets.QApplication.processEvents()
+
     def proc_btn_upload(self):
         if self._ssh is None:
             return
+        local = self._uploadLocalLine.text()
+        if not self._ulRealCheck.isChecked():
+            local = config.local_root + '/' + local
+        remote = self._uploadRemoteLine.text()
+        if not self._urRealCheck.isChecked():
+            remote = config.remote_root + '/' + remote
+        self._outputBox.append('upload file from [{}] to [{}] begin'.format(local, remote))
+        self._ssh.upload(local, remote, self.transport_status)
+        self._outputBox.append('upload file from [{}] to [{}] complete '.format(local, remote))
+        self._statusBar.showMessage('connected to {}@{}'.format(config.username, self._host))
 
     def proc_btn_download(self):
         if self._ssh is None:
             return
+        local = self._downloadLocalLine.text()
+        if not self._dlRealCheck.isChecked():
+            local = config.local_root + '/' + local
+        remote = self._downloadRemoteLine.text()
+        if not self._drRealCheck.isChecked():
+            remote = config.remote_root + '/' + remote
+        self._outputBox.append('download file from [{}] to [{}] begin'.format(remote, local))
+        self._ssh.download(remote, local, self.transport_status)
+        self._outputBox.append('download file from [{}] to [{}] complete'.format(remote, local))
+        self._statusBar.showMessage('connected to {}@{}'.format(config.username, self._host))
         
+    def closeEvent(self, event):
+        if not self._ssh is None:
+            self._ssh.close()
+        self.closed.emit(self._id)
         
+class StartDlg(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self._idSpin = QtWidgets.QSpinBox()
+        self._idSpin.setRange(0, 5)
+        startBtn = QtWidgets.QPushButton('Create New')
+        startBtn.clicked.connect(self.start_new)
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.addWidget(self._idSpin)
+        mainLayout.addWidget(startBtn)
+        mainWidget = QtWidgets.QWidget()
+        mainWidget.setLayout(mainLayout)
+        self.setCentralWidget(mainWidget)
+        self.windows = {}
+
+    def close_window(self, idx):
+        pass
+        #if idx in self.windows.keys():
+        #    self.windows.pop(idx)
+
+    def start_new(self):
+        idx = self._idSpin.text()
+        self.windows[idx] = EasyWindow(idx)
+        self.windows[idx].closed.connect(self.close_window)
+        self.windows[idx].showNormal()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 1:
-        common.print_error('run with cfg file')
-        exit(1)
     app = QtWidgets.QApplication(sys.argv)
-    w = EasyWindow()
-    w.show()
+    dlg = StartDlg()
+    dlg.show()
     sys.exit(app.exec_())

@@ -11,6 +11,7 @@ class ActionMonitor: public QMainWindow
     Q_OBJECT
 public:
     ActionMonitor(ros::NodeHandle &n);
+    ~ActionMonitor();
 
 public slots:
     void procTimer();

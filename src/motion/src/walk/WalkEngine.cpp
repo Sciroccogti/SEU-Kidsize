@@ -17,7 +17,6 @@ using namespace std;
 
 WalkEngine::WalkEngine()
 {
-    ros::service::waitForService("/paramservice");
     std::string cfgfile;
     try{
         ros::param::get("walk_file", cfgfile);

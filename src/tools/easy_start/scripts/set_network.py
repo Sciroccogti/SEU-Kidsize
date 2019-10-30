@@ -3,7 +3,7 @@
 
 import common
 import sys
-import ssh_connection
+import SSH
 import config
 
 
@@ -18,10 +18,6 @@ if __name__ == '__main__':
         exit(2)
 
     robot_id = sys.argv[1]
-    if not common.check_id(robot_id):
-        common.print_error('please check the robot id')
-        exit(3)
-
     ssid = sys.argv[2]
     pswd = sys.argv[3]
     ip = sys.argv[4]
@@ -32,18 +28,19 @@ if __name__ == '__main__':
         netmask = netmask+number_of_1(n)
     gateway = sys.argv[6]
 
-    ip_address = common.get_ip(robot_id)
+    ip_address = common.get_ip(config.conf_file, robot_id)
 
     cmd1 = '''
     sed -i '/ssid=/cssid={sid}' {file};
     sed -i '/psk=/cpsk={psk}' {file};
     sed -i '/address1=/caddress1={adr}' {file};
-    '''.format(sid=ssid, psk=pswd, adr=addr, file=config.wan_file)
+    '''.format(sid=ssid, psk=pswd, adr=ip, file=config.wan_file)
     cmd2 = '''
     sed -i '/address1=/caddress1={adr}' {file};
-    '''.format(adr=addr, file=config.lan_file)
+    '''.format(adr=ip, file=config.lan_file)
 
-    ssh_client = ssh_connection.ssh_connection(ip_address, config.ssh_port, config.username, config.password)
-    ssh_client.exec_command(cmd1)
-    ssh_client.exec_command(cmd2)
-    ssh_client.exec_command('poweroff')
+    ssh_client = SSH.SSH(ip_address, config.username, config.password)
+    shell = ssh_client.create_shell()
+    shell.exec_command(cmd1)
+    shell.exec_command(cmd2)
+    shell.exec_command('poweroff')

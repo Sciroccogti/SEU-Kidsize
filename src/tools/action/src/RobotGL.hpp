@@ -14,7 +14,6 @@ class RobotGL: public QOpenGLWidget, protected QOpenGLFunctions
     Q_OBJECT
 public:
     RobotGL(robot::BonePtr b, const robot::JointMap &jmap);
-    virtual ~RobotGL();
     void turn_joint(const std::map<int, float> &degs);
 
 protected:

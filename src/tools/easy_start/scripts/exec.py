@@ -2,7 +2,7 @@
 #coding: utf-8
 
 import sys
-import ssh_connection
+import SSH
 import common
 import config
 
@@ -15,17 +15,14 @@ if __name__ == '__main__':
 
     if not common.check_argv(sys.argv, 3):
         common.print_error('no enough arguments')
-        exit(2)
-        
+        exit(0)
     robot_id = sys.argv[1]
-    if not common.check_id(robot_id):
-        common.print_error('please check the robot id')
-        exit(3)
 
-    ip_address = common.get_ip(robot_id)
+    ip_address = common.get_ip(config.conf_file, robot_id)
     if not common.check_net(ip_address):
         common.print_error('can not connect to host, please check network')
-        exit(6)
-    ssh_client = ssh_connection.ssh_connection(ip_address, config.ssh_port, config.username, config.password)
+        exit(0)
+    ssh_client = SSH.SSH(ip_address, config.username, config.password)
+    shell = ssh_client.create_shell()
     for i in range(2, len(sys.argv)):
-        ssh_client.exec_command(sys.argv[i], False)
+        shell.exec_command(sys.argv[i])

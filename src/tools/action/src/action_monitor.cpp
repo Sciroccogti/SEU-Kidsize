@@ -46,6 +46,11 @@ ActionMonitor::ActionMonitor(ros::NodeHandle &n): node(n)
     start = false;
 }
 
+ActionMonitor::~ActionMonitor()
+{
+    delete rgl;
+}
+
 void ActionMonitor::procBtnCtrl()
 {
     if(start)

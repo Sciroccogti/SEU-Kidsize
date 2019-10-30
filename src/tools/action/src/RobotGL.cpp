@@ -486,8 +486,4 @@ void RobotGL::keyReleaseEvent(QKeyEvent *event)
     QWidget::keyReleaseEvent(event);
 }
 
-RobotGL::~RobotGL()
-{
-    gluDeleteQuadric(quad_obj);
-}
 

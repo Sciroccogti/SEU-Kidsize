@@ -22,7 +22,7 @@ void ImageUpdate(const sensor_msgs::Image::ConstPtr &p);
 void Run(const ros::TimerEvent& event);
 
 void ImagePublish(const cv::Mat &bgr);
-bool SetTypeService(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
+bool SendSrcService(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
 
 int camera_width;
 int camera_height;
@@ -43,7 +43,7 @@ CudaMatF yoloMat;
 
 network yolo;
 std::mutex image_mutex;
-std::atomic_bool send_dst(true);
+std::atomic_bool send_src(false);
 
 ros::Publisher imagePublisher;
 
@@ -89,9 +89,8 @@ int main(int argc, char **argv)
         return 0;
     }
     ros::Subscriber imageSubScriber = node.subscribe("/camera/image", 1, ImageUpdate);
-    imagePublisher = node.advertise<sensor_msgs::CompressedImage>(
-                    "/vision/image/compressed", 1);
-    ros::ServiceServer typeServer = node.advertiseService("/sendtype", SetTypeService);
+    imagePublisher = node.advertise<sensor_msgs::CompressedImage>("/vision/image/compressed", 1);
+    ros::ServiceServer typeServer = node.advertiseService("/sendsrc", SendSrcService);
     ros::Timer timer = node.createTimer(ros::Duration(0.1), Run);
     ros::spin();
 
@@ -123,24 +122,8 @@ void Run(const ros::TimerEvent& event)
     else
     {
         ret = YUV422ToRGB(srcMat, rgbMat);
-        if(!ret)
-        {
-            ROS_ERROR("YUV422ToRGB error");
-            return;
-        }
-        
         ret = Resize(rgbMat, dstMat);
-        if(!ret)
-        {
-            ROS_ERROR("Resize error");
-            return;
-        }
         ret = dstMat.copyTo(relMat);
-        if(!ret)
-        {
-            ROS_ERROR("copyTo error");
-            return;
-        }
     }
     
     ret = Resize(relMat, netMat);
@@ -211,7 +194,6 @@ void Run(const ros::TimerEvent& event)
     if(dbg)
     {   
         cv::Mat rgb(height, width, CV_8UC3);
-
         if(!dstMat.download(rgb))
         {
             ROS_ERROR("download error");
@@ -221,7 +203,7 @@ void Run(const ros::TimerEvent& event)
         cv::cvtColor(rgb, bgr, CV_RGB2BGR);
         
         
-        if(send_dst)
+        if(!send_src)
         {
             if (!ball_dets.empty())
             {
@@ -325,8 +307,8 @@ void ImagePublish(const cv::Mat &bgr)
     imagePublisher.publish(image);
 }
 
-bool SetTypeService(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
+bool SendSrcService(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
 {
-    send_dst = req.data;
+    send_src = req.data;
     return true;
 }

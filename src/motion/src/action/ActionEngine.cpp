@@ -6,19 +6,8 @@
 using namespace robot;
 using namespace seumath;
 
-static void PoseToTrans(const RobotPose &pose, geometry_msgs::Transform &trans)
-{
-    trans.translation.x = pose.x;
-    trans.translation.y = pose.y;
-    trans.translation.z = pose.z;
-    trans.rotation.x = pose.roll;
-    trans.rotation.y = pose.pitch;
-    trans.rotation.z = pose.yaw;
-}
-
 ActionEngine::ActionEngine()
 {
-    ros::service::waitForService("/paramservice");
     std::string act_file;
     try{
         ros::param::get("action_file", act_file);

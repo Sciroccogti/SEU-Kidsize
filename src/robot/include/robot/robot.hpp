@@ -10,6 +10,7 @@
 #include <seumath/math.hpp>
 #include <common/BodyAngles.h>
 #include <common/HeadAngles.h>
+#include <geometry_msgs/Transform.h>
 
 namespace robot
 {
@@ -151,6 +152,16 @@ namespace robot
 
     bool parse(std::string act_file, ActMap &acts, PosMap &poses);
     void save(const std::string &act_file, const ActMap &acts, const PosMap &poses);
+
+    inline void PoseToTrans(const RobotPose &pose, geometry_msgs::Transform &trans)
+    {
+        trans.translation.x = pose.x;
+        trans.translation.y = pose.y;
+        trans.translation.z = pose.z;
+        trans.rotation.x = pose.roll;
+        trans.rotation.y = pose.pitch;
+        trans.rotation.z = pose.yaw;
+    }
 
     class Robot
     {
