@@ -42,20 +42,20 @@ WalkEngine::WalkEngine()
      */
     common::BoneLength bsrv;
     bsrv.request.name = "rthigh";
-    ros::service::call("/robotbone", bsrv);
+    ros::service::call("/bonelength", bsrv);
     params_.distHipToKnee = bsrv.response.length;
     bsrv.request.name = "rshank";
-    ros::service::call("/robotbone", bsrv);
+    ros::service::call("/bonelength", bsrv);
     params_.distKneeToAnkle = bsrv.response.length;
     bsrv.request.name = "rfoot1";
-    ros::service::call("/robotbone", bsrv);
+    ros::service::call("/bonelength", bsrv);
     params_.distAnkleToGround = bsrv.response.length;
     /**
      * Distance between the two feet in lateral
      * axis while in zero position
      */
     bsrv.request.name = "hip";
-    ros::service::call("/robotbone", bsrv);
+    ros::service::call("/bonelength", bsrv);
     params_.distFeetLateral = bsrv.response.length;
     /**
      * Complete (two legs) walk cycle frequency

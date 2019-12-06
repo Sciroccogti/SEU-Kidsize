@@ -78,5 +78,6 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "qtwidgets": "cpp"
-    }
+    },
+    "python.pythonPath": "/usr/bin/python2"
 }

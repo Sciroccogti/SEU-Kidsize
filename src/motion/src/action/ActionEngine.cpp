@@ -62,7 +62,7 @@ bool ActionEngine::runAction(std::string act)
 
         for (auto act_pose : act_poses)
         {
-            ret = get_degs(pos1, bAngles);
+            ret = get_degs(act_pose, bAngles);
             if(!ret) return false;
             ros::service::call("/addangles", addSrv);
         }
@@ -113,7 +113,7 @@ bool ActionEngine::get_degs(robot::PoseMap &act_pose,  common::BodyAngles &bAngl
         return false;
     }
     bAngles.left_shoulder = rad2deg(ik.response.degs[0]);
-    bAngles.left_elbow = rad2deg(ik.response.degs[1]);
+    bAngles.left_elbow = -rad2deg(ik.response.degs[1]);
     PoseToTrans(act_pose[MOTION_RIGHT_HAND], ik.request.end);
     ik.request.part = ik.request.RIGHT_HAND;
     ros::service::call("/kinematics", ik);

@@ -2,7 +2,7 @@
 
 using namespace std;
 
-ImageLabel::ImageLabel(const int &w, const int &h)
+ImageLabel::ImageLabel(int w, int h)
 {
     this->setFixedSize(w, h);
     this->setStyleSheet("QLabel{background:black}");
@@ -13,6 +13,11 @@ void ImageLabel::set_image(QImage im)
 {
     image = QImage(im);
     this->update();
+}
+
+void ImageLabel::set_size(int w, int h)
+{
+    this->setFixedSize(w, h);
 }
 
 void ImageLabel::mousePressEvent(QMouseEvent *event)
@@ -68,3 +73,40 @@ void ImageLabel::paintEvent(QPaintEvent *event)
     }
 }
 
+
+Slider::Slider(Qt::Orientation orientation, QString name, QWidget *parent)
+    : QWidget(parent)
+{
+    valueLabel = new QLabel();
+    if(orientation == Qt::Horizontal)
+    {
+        QHBoxLayout *layout = new QHBoxLayout();
+        slider = new QSlider(Qt::Horizontal);
+        layout->addWidget(new QLabel(name));
+        layout->addWidget(slider);
+        layout->addWidget(valueLabel);
+        setLayout(layout);
+    }
+    else
+    {
+        QVBoxLayout *layout = new QVBoxLayout();
+        slider = new QSlider(Qt::Vertical);
+        layout->addWidget(valueLabel);
+        layout->addWidget(slider);
+        layout->addWidget(new QLabel(name));
+        setLayout(layout);
+    }
+    slider->setRange(0, 200);
+    connect(slider, &QSlider::valueChanged, this, &Slider::procValueChanged);
+}
+
+void Slider::setRange(int mini, int maxi)
+{
+    slider->setRange(mini, maxi);
+}
+
+void Slider::procValueChanged(int v)
+{
+    valueLabel->setText(QString::number(v));
+    emit changed(v);
+}

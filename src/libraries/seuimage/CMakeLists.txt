@@ -135,6 +135,8 @@ include_directories(
 add_library(seuimage STATIC
   src/seuimage.cu
   src/seuimage.cpp
+  src/fitline.cpp
+  src/ransac.cpp
 )
 
 ## Add cmake target dependencies of the library

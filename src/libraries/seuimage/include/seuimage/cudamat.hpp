@@ -52,7 +52,7 @@ namespace seuimage
         }
         ~CudaMat()
         {
-            std::cout<<"CudaMat: cuda memory released"<<std::endl;
+            //std::cout<<"CudaMat: cuda memory released"<<std::endl;
             cudaFree(m_data);
         }
 

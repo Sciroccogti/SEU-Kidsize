@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "camera");
     ros::NodeHandle node;
-    ros::service::waitForService("/paramservice");
+    ros::service::waitForService("/maxwell");
     std::string cfgfile;
     try{
         ros::param::get("camera_property_file", cfgfile);

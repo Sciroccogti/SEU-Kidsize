@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- start camera -->
+  <node pkg="vision" type="camera" name="camera" output="screen"/>
+  <!-- start camera -->
+  <node pkg="vision" type="image_process" name="imgproc" output="screen"/>
+</launch>

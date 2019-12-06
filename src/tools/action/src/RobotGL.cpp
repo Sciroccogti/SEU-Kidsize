@@ -164,7 +164,7 @@ void RobotGL::initializeGL()
     GLfloat light1_diffuse[] = {1.0f, 1.0f, 1.0f, 1.0f};
     GLfloat light1_specular[] = {1.0f, 1.0f, 1.0f, 1.0f};
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(0.2f, 0.8f, 1.0f, 0.0f);
     glShadeModel(GL_SMOOTH);
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);

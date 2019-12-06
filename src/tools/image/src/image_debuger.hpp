@@ -5,6 +5,10 @@
 #include <QtWidgets>
 #include "ImageLabel.hpp"
 #include <opencv2/opencv.hpp>
+#include <darknet/network.h>
+#include <darknet/parser.h>
+#include <seuimage/seuimage.hpp>
+#include <ros/ros.h>
 
 class ImageDebuger: public QMainWindow
 {
@@ -16,15 +20,20 @@ public slots:
     void procBtnLoad();
     void procBtnLast();
     void procBtnNext();
-    void procBoxAuto();
+    void procBtnAuto();
     void procShot(QRect rect);
     void procFrmSlider(int v);
+    void procSlider(int v);
     
 private:
     void procImage(const unsigned int &index);
     void showSrc();
     void showDst();
     void Reset();
+    void calHSVThresh(QRect rect);
+
+    bool NetworkInit(std::string cfg, std::string wts);
+    void BallAndPostDet();
     
     template<typename T>
     T Mean(std::vector<T> &data)
@@ -35,24 +44,32 @@ private:
         return static_cast<T>(sum/data.size());
     }
     
-    std::vector<uint8_t> H, S, V;
-    uint8_t H_low, H_high, S_low, S_high, V_low, V_high;
+    std::vector<int> H, S, V;
+    int H_low, H_high, S_low, S_high, V_low, V_high;
 
-    QPushButton *btnLoad, *btnNext, *btnLast;
-    QCheckBox *boxAuto;
+    QPushButton *btnLoad, *btnNext, *btnLast, *btnAutoPlay;
+    QCheckBox *autoSaveBox;
     ImageLabel *srcLab, *dstLab;
     QLabel *infoLab;
     QTimer *timer;
-    QSlider *frmSlider;
+    QSlider *frmSlider, *fieldSlider;
+    Slider *sld1, *sld2, *sld3;
+    QLabel *ftLabel;
     QLineEdit *delayEdit;
-    QComboBox *funcBox;
+    QCheckBox *ballpostBox, *fieldBox;
     unsigned int curr_index_;
-    cv::Mat curr_image_;
     QString curr_dir_;
     QStringList image_names_;
     cv::Mat rgb_src_, hsv_src_, rgb_dst_;
     int width_;
     int height_;
+
+    network yolo;
+    seuimage::CudaMatC netMat;
+    seuimage::CudaMatF netfMat;
+    seuimage::CudaMatF yoloMat;
 };
+
+
 
 #endif

@@ -24,6 +24,27 @@ __global__ void white_balance_kernal(unsigned char *rgb, float rgain, float ggai
     rgb[offset+2] = rgb_bound(bf);
 }
 
+__global__ void label_color_kernal(unsigned char *rgb, unsigned char *hsv, 
+    int h_l, int h_h, int s_l, int s_h, int v_l, int v_h)
+{
+    int x = blockIdx.x*blockDim.x+threadIdx.x;
+    int y = blockIdx.y*blockDim.y+threadIdx.y;
+    int w = gridDim.x * blockDim.x;
+
+    int offset = y*w*3+x*3;
+    unsigned char h = hsv[offset+0];
+    unsigned char s = hsv[offset+1];
+    unsigned char v = hsv[offset+2];
+    if(h>=h_l && h<=h_h &&
+       s>=s_l && s<=s_h && 
+       v>=v_l && v<=v_h)
+    {
+        rgb[offset+0] = 0;
+        rgb[offset+1] = 255;
+        rgb[offset+2] = 0;
+    }
+}
+
 __global__ void build_map_kernal(float *pCamK, float *pDistort, float *pInvNewCamK, float *pMapx, float *pMapy, int outImgW, int outImgH)
 {
     const int tidx = blockDim.x*blockIdx.x + threadIdx.x;
@@ -127,6 +148,21 @@ namespace seuimage
         cudaThreadSynchronize();
         remap_kernal <<<grid, block >>> (in.data(), out.data(), pMapx, pMapy, w, h, w, h, c);
         cudaThreadSynchronize();
+        cudaError_t err = cudaGetLastError();
+        if(err != cudaSuccess) return false;
+        return true;
+    }
+
+    bool LabelColor(CudaMatC &rgb, CudaMatC &hsv, const std::vector<cv::Point> &HSV)
+    {
+        int h_l = HSV[0].x,  h_h = HSV[0].y;
+        int s_l = HSV[1].x,  s_h = HSV[1].y;
+        int v_l = HSV[2].x,  v_h = HSV[2].y;
+
+        int w=rgb.width(), h=rgb.height();
+        dim3 block(BLOCKX, BLOCKY);
+        dim3 grid(w/BLOCKX, h/BLOCKY);
+        label_color_kernal<<<grid, block>>>(rgb.data(), hsv.data(), h_l, h_h, s_l, s_h, v_l, v_h);
         cudaError_t err = cudaGetLastError();
         if(err != cudaSuccess) return false;
         return true;

@@ -67,7 +67,7 @@ add_service_files(
   BoneLength.srv
   CameraInfo.srv
   Kinematics.srv
-  VirtualRobot.srv
+  GetAngles.srv
   AddAngles.srv
 )
 

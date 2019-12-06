@@ -12,6 +12,7 @@ set(CMAKE_CUDA_FLAGS "${CUDA_ARCH_FLAGS_SPACE_SEPARATED}")
 set(CMAKE_CXX_STANDARD 11)
 find_package(OpenCV)
 add_definitions(-DGPU)
+add_definitions(-DCUDNN)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -149,7 +150,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(camera src/camera.cpp src/vision_parser.cpp)
-add_executable(vision src/vision.cpp src/vision_parser.cpp)
+add_executable(image_process src/image_process.cpp src/vision_parser.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -167,7 +168,7 @@ target_link_libraries(camera
   common
 )
 
-target_link_libraries(vision
+target_link_libraries(image_process
   ${catkin_LIBRARIES}
   cuda
   cudart

@@ -6,6 +6,7 @@
 #include "RobotGL.hpp"
 #include <robot/robot.hpp>
 #include <ros/ros.h>
+#include <common/AddAngles.h>
 
 #define SLIDER_RANGE 1000
 
@@ -151,6 +152,13 @@ private:
     void initJDInfo();
     float get_deg_from_pose(const float &ps);
     bool turn_joint();
+
+    std::vector< std::map<robot::RobotMotion, robot::RobotPose> > 
+            get_poses(std::map<robot::RobotMotion, robot::RobotPose> &pos1,
+            std::map<robot::RobotMotion, robot::RobotPose> &pos2, int act_time);
+
+    bool get_degs(robot::PoseMap &act_pose, common::BodyAngles &bAngles);
+
 
     robot::RobotMotion motion_, last_motion;
     std::map<robot::RobotMotion, robot::RobotPose> pose_map_;

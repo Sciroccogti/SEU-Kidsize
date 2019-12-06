@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "motion");
     ros::NodeHandle node;
-    ros::service::waitForService("/paramservice");
+    ros::service::waitForService("/maxwell");
     ros::service::waitForService("/addangles");
     actionEng = std::make_shared<ActionEngine>();
     walkEng = std::make_shared<WalkEngine>();
@@ -87,6 +87,10 @@ int main(int argc, char **argv)
                         StopWalk(isWalking, phase, time);
                     actionEng->runAction(task.actname);
                 }
+            }
+            else
+            {
+                StartWalk(isWalking, phase, time);
             }
         }
         loop_rate.sleep();

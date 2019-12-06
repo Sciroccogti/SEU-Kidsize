@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-  <!-- start robot -->
-  <node pkg="robot" type="maxwell" name="maxwell" output="screen"/>
-</launch>

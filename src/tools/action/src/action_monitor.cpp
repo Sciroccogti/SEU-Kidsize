@@ -1,6 +1,6 @@
 #include <QApplication>
 #include "action_monitor.hpp"
-#include <common/VirtualRobot.h>
+#include <common/GetAngles.h>
 
 using namespace std;
 using namespace robot;
@@ -19,7 +19,6 @@ int main(int argc, char **argv)
 
 ActionMonitor::ActionMonitor(ros::NodeHandle &n): node(n)
 {
-    setAttribute(Qt::WA_DeleteOnClose);
     std::string robot_file, offset_file;
     try{
         ros::param::get("robot_file", robot_file);
@@ -40,7 +39,7 @@ ActionMonitor::ActionMonitor(ros::NodeHandle &n): node(n)
     setCentralWidget(mainWidget);
 
     timer = new QTimer;
-    timer->start(20);
+    timer->start(10);
     connect(timer, &QTimer::timeout, this, &ActionMonitor::procTimer);
     connect(btnCtrl, &QPushButton::clicked, this, &ActionMonitor::procBtnCtrl);
     start = false;
@@ -69,8 +68,8 @@ void ActionMonitor::procTimer()
 {
     if(start)
     {
-        common::VirtualRobot vir;
-        ros::service::call("/virtualrobot", vir);
+        common::GetAngles vir;
+        ros::service::call("/getangles", vir);
         rbt->set_head(vir.response.head);
         rbt->set_body(vir.response.body);
         std::map<int, float> jds;

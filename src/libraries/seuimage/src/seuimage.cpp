@@ -32,6 +32,19 @@ namespace seuimage
         return true;
     }
 
+    bool RGBToHSV(CudaMatC &rgb, CudaMatC &hsv)
+    {
+        int w = rgb.width(), h=rgb.height();
+        NppiSize size = {w, h};
+
+        Npp8u *src = (Npp8u*)(rgb.data());
+        Npp8u *dst = (Npp8u*)(hsv.data());
+        NppStatus status = nppiRGBToHSV_8u_C3R(src, w*rgb.channels(),
+                    dst, w*rgb.channels(), size);
+        if(status != NPP_SUCCESS) return false;
+        return true;
+    }
+
     bool Resize(CudaMatC &mSrc, CudaMatC &mDst)
     {
         int iw=mSrc.width(), ih=mSrc.height();

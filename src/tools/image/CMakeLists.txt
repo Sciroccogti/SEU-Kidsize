@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(image)
 
+enable_language(C)
+enable_language(CXX)
+enable_language(CUDA)
+find_package(CUDA REQUIRED)
+include_directories(${CUDA_INCLUDE_DIRS})
+cuda_select_nvcc_arch_flags(NVCC_FLAGS "Auto")
+string (REPLACE ";" " " CUDA_ARCH_FLAGS_SPACE_SEPARATED "${NVCC_FLAGS}")
+set(CMAKE_CUDA_FLAGS "${CUDA_ARCH_FLAGS_SPACE_SEPARATED}")
+set(CMAKE_CXX_STANDARD 11)
+find_package(OpenCV)
+add_definitions(-DGPU)
+add_definitions(-DCUDNN)
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -13,6 +26,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   seuimage
   seumath
+  roslib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -170,6 +184,11 @@ target_link_libraries(image_debuger
   opencv_core
   opencv_imgproc
   opencv_imgcodecs
+  cuda
+  cudart
+  darknet
+  seuimage
+  common
 )
 
 #############

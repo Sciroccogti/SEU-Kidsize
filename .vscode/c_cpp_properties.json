@@ -11,7 +11,7 @@
                 "/usr/local/cuda/include/**",
                 "${workspaceFolder}/devel/include/**",
                 "${workspaceFolder}/src/common/include/**",
-                "${workspaceFolder}/src/robot/include/**",
+                "${workspaceFolder}/src/libraries/robot/include/**",
                 "${workspaceFolder}/src/libraries/seumath/include/**",
                 "${workspaceFolder}/src/libraries/seuimage/include/**",
                 "${workspaceFolder}/src/libraries/darknet/include/**",

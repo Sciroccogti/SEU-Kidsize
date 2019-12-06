@@ -10,6 +10,8 @@ namespace seuimage
     bool YUV422ToRGB(CudaMatC &yuv422, CudaMatC &rgb);
     bool BayerToRGB(CudaMatC &bayer, CudaMatC &rgb);
     bool Resize(CudaMatC &mSrc, CudaMatC &mDst);
+    bool RGBToHSV(CudaMatC &rgb, CudaMatC &hsv);
+    bool LabelColor(CudaMatC &rgb, CudaMatC &hsv, const std::vector<cv::Point> &HSV);
 
     bool RGB8uTo32fNorm(CudaMatC &mSrc, CudaMatF &mDst);
     bool PackedToPlanar(CudaMatF &packed, CudaMatF &planar);
