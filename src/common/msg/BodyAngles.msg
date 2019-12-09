@@ -14,3 +14,4 @@ float64 left_shoulder
 float64 left_elbow
 float64 right_shoulder
 float64 right_elbow
+int32 time

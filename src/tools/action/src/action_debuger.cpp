@@ -572,7 +572,6 @@ bool ActionDebuger::turn_joint()
     {
         return false;
     }
-
     robot_gl_->turn_joint(joint_degs_);
     updateJDInfo();
     return true;
@@ -841,6 +840,22 @@ void ActionDebuger::procPosSelect(QListWidgetItem *item)
     pose_map_ = pos_map_[pos_name].pose_info;
     updateSlider(static_cast<int>(motion_));
     turn_joint();
+    std::cout<< pPosWidget->time_<<std::endl;
+    for(int i=11; i<23; i++)
+    {
+        std::cout<<deg2rad(joint_degs_[i]);
+        if(i==16||i==22)
+            std::cout<<std::endl;
+        else
+            std::cout<<' ';
+    }
+    for(int i=7; i<11; i++)
+    {
+        std::cout<<deg2rad(joint_degs_[i]);
+        std::cout<<' ';
+    }
+    std::cout<<std::endl;
+    std::cout<<std::endl;
     mSliderGroup->setEnabled(true);
     last_pos_id = m_pPosListWidget->currentRow();
 }

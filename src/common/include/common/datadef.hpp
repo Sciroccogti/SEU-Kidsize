@@ -3,12 +3,6 @@
 
 #include <common/PlayerInfo.h>
 
-enum CameraType
-{
-    CAMERA_NONE,
-    CAMERA_MV,
-    CAMERA_UVC
-};
 
 struct CameraParams
 {

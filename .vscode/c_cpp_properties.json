@@ -9,6 +9,7 @@
                 "/opt/ros/melodic/include/**",
                 "/usr/include/**",
                 "/usr/local/cuda/include/**",
+                "/usr/local/webots/include/controller/cpp/**",
                 "${workspaceFolder}/devel/include/**",
                 "${workspaceFolder}/src/common/include/**",
                 "${workspaceFolder}/src/libraries/robot/include/**",

@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <launch>
+  <!-- start config -->
+  <node pkg="config" type="config" name="config" output="screen"/>
   <!-- start player -->
   <node pkg="player" type="player" name="player" output="screen"/>
   <!-- start motion -->

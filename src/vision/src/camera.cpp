@@ -36,7 +36,7 @@ extern void uvc_run();
 int camera_fd = -1;
 int width;
 int height;
-CameraType camera_type;
+int camera_type;
 common::CameraProperty camera_property;
 
 // for USB Camera
@@ -51,7 +51,15 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "camera");
     ros::NodeHandle node;
-    ros::service::waitForService("/maxwell");
+    bool params_seted = false;
+    while(!params_seted && ros::ok()){
+        try{
+            ros::param::get("params", params_seted);
+        }catch(const std::exception& e){
+            ROS_WARN("%s", e.what());
+        }
+        usleep(100000);
+    }
     std::string cfgfile;
     try{
         ros::param::get("camera_property_file", cfgfile);
@@ -67,12 +75,12 @@ int main(int argc, char **argv)
     imagePublisher = node.advertise<sensor_msgs::Image>("/camera/image", 1);
     ros::Subscriber proSubscriber = node.subscribe("/cameraproperty", 1, update_camera);
     ros::ServiceServer infoServer = node.advertiseService("/camerainfo", info_service);
-    if (camera_type == CAMERA_MV)
+    if (camera_type == common::CameraInfo::Response::CAMERA_Bayer)
     {
         mv_run();
         close_mv_camera();
     }
-    else if (camera_type == CAMERA_UVC)
+    else if (camera_type == common::CameraInfo::Response::CAMERA_YUYV)
     {
         uvc_run();
         close_uvc_camera();
@@ -90,21 +98,21 @@ bool info_service(common::CameraInfo::Request &req, common::CameraInfo::Response
 
 void publish_image(uint8_t *data)
 {
-    if(camera_type == CAMERA_NONE) return;
+    if(camera_type == common::CameraInfo::Response::CAMERA_NONE) return;
     sensor_msgs::Image image;
     image.header.frame_id = "camera";
     image.header.stamp = ros::Time::now();
     image.height = height;
     image.width = width;
     
-    if(camera_type == CAMERA_MV)
+    if(camera_type == common::CameraInfo::Response::CAMERA_Bayer)
     {
         image.step = width;
         image.encoding = sensor_msgs::image_encodings::BAYER_GRBG8;
         image.data.resize(width*height);
         memcpy(&(image.data[0]), data, width*height);
     }
-    else
+    else if(camera_type == common::CameraInfo::Response::CAMERA_YUYV)
     {
         image.step = 2*width;
         image.encoding = sensor_msgs::image_encodings::YUV422;
@@ -174,7 +182,7 @@ void set_camera()
 
 void update_camera(const common::CameraProperty::ConstPtr &p)
 {
-    if(camera_type != CAMERA_MV) return;
+    if(camera_type != common::CameraInfo::Response::CAMERA_Bayer) return;
     camera_property.exposure_gain = p->exposure_gain;
     camera_property.exposure_time = p->exposure_time;
     set_camera();
@@ -194,10 +202,10 @@ bool open_camera(std::string cfile)
     }
     else
     {
-        camera_type = CAMERA_MV;
+        camera_type = common::CameraInfo::Response::CAMERA_Bayer;
     }
 
-    if (camera_type == CAMERA_MV)
+    if (camera_type == common::CameraInfo::Response::CAMERA_Bayer)
     {
         bool ret = parse(cfile, camera_property);
         iStatus = CameraInit(&tCameraEnumList, -1, PARAMETER_TEAM_DEFAULT, &camera_fd);
@@ -304,7 +312,7 @@ bool open_camera(std::string cfile)
             return false;
         }
 
-        camera_type = CAMERA_UVC;
+        camera_type = common::CameraInfo::Response::CAMERA_YUYV;
     }
 
     return true;

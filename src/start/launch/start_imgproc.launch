@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- start config -->
+  <node pkg="config" type="config" name="config" output="screen"/>
+  <!-- start image_process -->
+  <node pkg="vision" type="image_process" name="imgproc" output="screen"/>
+</launch>

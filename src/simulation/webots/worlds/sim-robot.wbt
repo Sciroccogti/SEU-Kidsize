@@ -1,0 +1,46 @@
+#VRML_SIM R2019b utf8
+WorldInfo {
+  basicTimeStep 20
+}
+Viewpoint {
+  orientation -0.004121418256959324 -0.9995556424682829 -0.02952171271063941 1.4968235023949528
+  position -1.1977627220846607 0.6656410734290936 0.1754537800397008
+}
+SoccerField {
+}
+TexturedBackground {
+  texture "noon_sunny_empty"
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction 5 -0.5 0
+  intensity 2
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction -5 -0.5 0
+  intensity 2
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction 0 -0.5 4
+  intensity 2
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction 0 -0.5 -4
+  intensity 2
+}
+DEF Ball SoccerBall {
+  translation 0 0.07 0
+  radius 0.07
+  mass 0.5
+  linearDamping 0.5
+  angularDamping 0.5
+}
+DEF maxwell SEURobot
+{
+  translation 0 0.365 0
+  controller "<extern>"
+  name "maxwell"
+}

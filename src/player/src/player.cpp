@@ -1,7 +1,5 @@
 #include <ros/ros.h>
-#include <ros/package.h>
 #include <robot/robot.hpp>
-#include <common/basic_parser.hpp>
 #include <std_srvs/Empty.h>
 #include <std_srvs/SetBool.h>
 #include <common/BoneLength.h>
@@ -30,7 +28,6 @@ bool AddAnglesService(AddAngles::Request &req, AddAngles::Response &res);
 bool GetAnglesService(GetAngles::Request &req, GetAngles::Response &res);
 
 void SendJointToMCU();
-bool UpdateParams();
 
 std::shared_ptr<Robot> maxwell;
 std::shared_ptr<Mcu> mcu;
@@ -45,19 +42,20 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "maxwell");
     ros::NodeHandle node;
-    
-    if(!UpdateParams())
-    {
-        ROS_ERROR("update params failed");
-        return 0;
+    bool params_seted = false;
+    while(!params_seted && ros::ok()){
+        try{
+            ros::param::get("params", params_seted);
+        }catch(const ros::InvalidNameException& e){
+            ROS_WARN("%s", e.what());
+        }
+        usleep(100000);
     }
-
     std::string robot_file, offset_file;
     try{
         ros::param::get("robot_file", robot_file);
         ros::param::get("offset_file", offset_file);
-    }
-    catch(ros::InvalidNameException &e){
+    }catch(ros::InvalidNameException &e){
         ROS_ERROR("%s", e.what());
         return 0;
     }
@@ -311,78 +309,5 @@ bool GetAnglesService(GetAngles::Request &req, GetAngles::Response &res)
     res.body.right_ankle_pitch = maxwell->get_joint("jrankle2")->current_deg;
     res.body.right_ankle_roll = maxwell->get_joint("jrankle1")->current_deg;
 
-    return true;
-}
-
-bool UpdateParams()
-{
-    const std::string root_cfg_file = "config.conf";
-    std::string cfgpath = ros::package::getPath("config")+"/conf/";
-
-    string cfgfile(cfgpath+root_cfg_file);
-    bpt::ptree pt;
-    if(!parse_file(cfgfile, pt)){
-        ROS_ERROR("parser cfgfile: %s failed", cfgfile.c_str());
-        return false;
-    }
-    int id = pt.get<int>("id");
-    try
-    {
-        for(auto p:pt)
-        {
-            if(!p.second.data().empty())
-            {
-                string data=p.second.data();
-                if(p.first.find("file")!=string::npos){
-                    data = cfgpath+data;
-                }
-                if(data == "true")
-                {
-                    ros::param::set(p.first, true);
-                }
-                else if(data == "false")
-                {
-                    ros::param::set(p.first, false);
-                }
-                else
-                {
-                    bool ok=false;
-                    try{
-                        int d = std::stoi(data);
-                        ros::param::set(p.first, d);
-                        ok = true;
-                    }
-                    catch(std::invalid_argument&){
-                    }
-                    if(!ok)
-                    {
-                        try{
-                            float d = std::stof(data);
-                            ros::param::set(p.first, d);
-                            ok = true;
-                        }
-                        catch(std::invalid_argument&){
-                        }
-                    }
-                    if(!ok) ros::param::set(p.first, data);
-                }
-            }
-        }
-        std::string temp = "players." + std::to_string(id);
-        bpt::ptree pr = pt.get_child(temp);
-        for (auto p : pr)
-        {
-            string data=p.second.data();
-            if(p.first.find("file")!=string::npos){
-                data = cfgpath+data;
-            }
-            ros::param::set(p.first, data);
-        }
-    }
-    catch (bpt::ptree_error &e)
-    {
-        ROS_ERROR("%s", e.what());
-        return false;
-    }
     return true;
 }

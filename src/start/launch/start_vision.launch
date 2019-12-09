@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <launch>
+  <!-- start config -->
+  <node pkg="config" type="config" name="config" output="screen"/>
   <!-- start camera -->
   <node pkg="vision" type="camera" name="camera" output="screen"/>
-  <!-- start camera -->
+  <!-- start image_process -->
   <node pkg="vision" type="image_process" name="imgproc" output="screen"/>
 </launch>

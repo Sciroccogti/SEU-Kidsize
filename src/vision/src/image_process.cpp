@@ -26,7 +26,7 @@ bool SendSrcService(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response
 
 int camera_width;
 int camera_height;
-CameraType camera_type;
+int camera_type;
 common::CameraProperty camera_property;
 
 const int width=640;
@@ -52,9 +52,18 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "imgproc");
     ros::NodeHandle node;
+    bool params_seted = false;
+    while(!params_seted && ros::ok()){
+        try{
+            ros::param::get("params", params_seted);
+        }catch(const std::exception& e){
+            ROS_WARN("%s", e.what());
+        }
+        ROS_INFO("waiting for params set......");
+        usleep(1000000);
+    }
     GetCameraInfo(node);
-
-    ros::service::waitForService("/maxwell");
+    ROS_INFO("w=%d, h=%d, type=%d", camera_width, camera_height, camera_type);
     std::string cfgfile;
     std::string visionfile;
 
@@ -111,7 +120,7 @@ void Run(const ros::TimerEvent& event)
         ROS_ERROR("upload error");
         return;
     }
-    if (camera_type == CAMERA_MV)
+    if (camera_type == common::CameraInfo::Response::CAMERA_Bayer)
     {
         ret = BayerToRGB(srcMat, rgbMat);
         ret = Resize(rgbMat, dstMat);
@@ -120,12 +129,18 @@ void Run(const ros::TimerEvent& event)
         //err = cudaUndistored(dev_target_, dev_undis_, pCamKData, pDistortData, pInvNewCamKData, pMapxData, pMapyData, w_, h_, 3);
         ret = dstMat.copyTo(relMat);
     }
-    else
+    else if(camera_type == common::CameraInfo::Response::CAMERA_YUYV)
     {
         ret = YUV422ToRGB(srcMat, rgbMat);
         ret = Resize(rgbMat, dstMat);
         ret = dstMat.copyTo(relMat);
     }
+    else if(camera_type == common::CameraInfo::Response::CAMERA_RGB)
+    {
+        ret = Resize(srcMat, dstMat);
+        ret = dstMat.copyTo(relMat);
+    }
+    else return;
     ret = RGBToHSV(relMat, hsvMat);
     
     ret = Resize(relMat, netMat);
@@ -242,16 +257,22 @@ void NetworkInit(std::string cfg, std::string wts)
 bool MallocMemory()
 {
     bool ret;
-    if(camera_type == CAMERA_MV)
+    if(camera_type == common::CameraInfo::Response::CAMERA_Bayer)
     {
         cmrMat.create(camera_height, camera_width, CV_8UC1);
         ret = srcMat.create(camera_height, camera_width, 1);
         if(!ret) return false;
     }
-    else
+    else if(camera_type == common::CameraInfo::Response::CAMERA_YUYV)
     {
         cmrMat.create(camera_height, camera_width, CV_8UC2);
         ret = srcMat.create(camera_height, camera_width, 2);
+        if(!ret) return false;
+    }
+    else if(camera_type == common::CameraInfo::Response::CAMERA_RGB)
+    {
+        cmrMat.create(camera_height, camera_width, CV_8UC3);
+        ret = srcMat.create(camera_height, camera_width, 3);
         if(!ret) return false;
     }
         
@@ -286,8 +307,7 @@ void GetCameraInfo(ros::NodeHandle &node)
     ros::ServiceClient infoClient = node.serviceClient<common::CameraInfo>("/camerainfo");
     common::CameraInfo info;
     infoClient.call(info);
-    infoClient.shutdown();
-    camera_type = static_cast<CameraType>(info.response.camera_type);
+    camera_type = info.response.camera_type;
     camera_width = info.response.width;
     camera_height = info.response.height;
 }
