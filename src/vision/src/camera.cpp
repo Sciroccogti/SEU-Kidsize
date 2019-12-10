@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     {
         return 0;
     }
-    imagePublisher = node.advertise<sensor_msgs::Image>("/camera/image", 1);
+    imagePublisher = node.advertise<sensor_msgs::Image>("/sensor/image", 1);
     ros::Subscriber proSubscriber = node.subscribe("/cameraproperty", 1, update_camera);
     ros::ServiceServer infoServer = node.advertiseService("/camerainfo", info_service);
     if (camera_type == common::CameraInfo::Response::CAMERA_Bayer)

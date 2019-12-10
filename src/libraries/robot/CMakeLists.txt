@@ -9,6 +9,7 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   common
+  config
   roscpp
   geometry_msgs
   seumath
@@ -151,7 +152,7 @@ add_library(robot STATIC
 ## Specify libraries to link a library or executable target against
 target_link_libraries(robot
   ${catkin_LIBRARIES}
-  common
+  config
 )
 
 #############

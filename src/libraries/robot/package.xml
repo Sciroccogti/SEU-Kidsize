@@ -50,16 +50,18 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>common</build_depend>
+  <build_depend>config</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>seumath</build_depend>
-  <build_depend>config</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>message_generation</build_depend>
   <build_export_depend>common</build_export_depend>
+  <build_export_depend>config</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>seumath</build_export_depend>
   <build_export_depend>message_generation</build_export_depend>
   <exec_depend>common</exec_depend>
+  <exec_depend>config</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>seumath</exec_depend>
   <exec_depend>message_runtime</exec_depend>

@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   robot
   roscpp
   seumath
+  config
 )
 
 ## System dependencies are found with CMake's conventions
@@ -160,7 +161,7 @@ target_link_libraries(action_monitor
   Qt5::Core
   Qt5::Gui
   robot
-  common
+  config
 )
 
 target_link_libraries(action_debuger
@@ -172,7 +173,7 @@ target_link_libraries(action_debuger
   Qt5::Core
   Qt5::Gui
   robot
-  common
+  config
 )
 #############
 ## Install ##

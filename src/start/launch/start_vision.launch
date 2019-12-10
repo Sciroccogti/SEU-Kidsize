@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- start config -->
-  <node pkg="config" type="config" name="config" output="screen"/>
+  <!-- start update -->
+  <include file="$(find start)/launch/update_params.launch" />
   <!-- start camera -->
   <node pkg="vision" type="camera" name="camera" output="screen"/>
   <!-- start image_process -->

@@ -1,7 +1,7 @@
 #ifndef __VISION_PARSER_HPP
 #define __VISION_PAESER_HPP
 
-#include <common/basic_parser.hpp>
+#include <config/basic_parser.hpp>
 #include <common/CameraProperty.h>
 #include <common/datadef.hpp>
 

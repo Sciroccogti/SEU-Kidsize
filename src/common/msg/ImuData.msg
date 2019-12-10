@@ -1,4 +1,4 @@
-uint32 stamp
+uint64 stamp
 float32 pitch
 float32 roll
 float32 yaw

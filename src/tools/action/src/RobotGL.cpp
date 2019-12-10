@@ -6,7 +6,7 @@
 #define DRAW_LIST_U_AXE 11
 
 static GLfloat m_mat_diff_env[] = {0.0f, 0.0f, 1.0f, 1.0f};
-static GLfloat m_mat_diff_normal[] = {1.0f, 1.0f, 0.7f, 1.0f};
+static GLfloat m_mat_diff_normal[] = {1.0f, 0.6f, 0.2f, 1.0f};
 
 using namespace std;
 using namespace robot;
@@ -164,7 +164,7 @@ void RobotGL::initializeGL()
     GLfloat light1_diffuse[] = {1.0f, 1.0f, 1.0f, 1.0f};
     GLfloat light1_specular[] = {1.0f, 1.0f, 1.0f, 1.0f};
 
-    glClearColor(0.2f, 0.8f, 1.0f, 0.0f);
+    glClearColor(0.8f, 1.0f, 1.0f, 0.0f);
     glShadeModel(GL_SMOOTH);
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);

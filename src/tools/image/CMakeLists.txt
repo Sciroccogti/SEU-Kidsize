@@ -27,6 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
   seuimage
   seumath
   roslib
+  config
 )
 
 ## System dependencies are found with CMake's conventions
@@ -188,7 +189,6 @@ target_link_libraries(image_debuger
   cudart
   darknet
   seuimage
-  common
 )
 
 #############

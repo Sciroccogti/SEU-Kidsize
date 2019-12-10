@@ -7,9 +7,9 @@
 #include <fstream>
 #include <ros/ros.h>
 #include <common/BoneLength.h>
-#include <common/basic_parser.hpp>
 #include <common/BodyAngles.h>
 #include <common/AddAngles.h>
+#include <config/basic_parser.hpp>
 
 using namespace Eigen;
 using namespace seumath;

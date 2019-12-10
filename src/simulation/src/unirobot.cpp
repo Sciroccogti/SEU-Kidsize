@@ -1,6 +1,7 @@
 #include "unirobot.hpp"
 #include <cstdlib>
 #include <fstream>
+#include <common/HeadAngles.h>
 #include <sensor_msgs/image_encodings.h>
 #include <seumath/math.hpp>
 
@@ -38,9 +39,12 @@ UniRobot::UniRobot(ros::NodeHandle *node, string name, std::string actdir): Robo
     mHAngles.yaw = 0.0;
     mHAngles.pitch = -M_PI/4;
     mNode = node;
-    mImagePublisher = mNode->advertise<sensor_msgs::Image>("/camera/image", 1);
-    mImuPublisher = mNode->advertise<sensor_msgs::Image>("/imu", 1);
+    mImagePublisher = mNode->advertise<sensor_msgs::Image>("/sensor/image", 1);
+    mHeadPublisher = mNode->advertise<common::HeadAngles>("/sensor/head", 1);
+    mImuPublisher = mNode->advertise<common::ImuData>("/sensor/imu", 1);
     mCameraInfoServer = mNode->advertiseService("/camerainfo", &UniRobot::CameraInfoService, this);
+    mHeadTaskSubscriber = mNode->subscribe("/task/head", 1, &UniRobot::HeadTaskUpdate, this);
+    mBodyTaskSubscriber = mNode->subscribe("/task/body", 1, &UniRobot::BodyTaskUpdate, this);
 }
 
 UniRobot::~UniRobot(){
@@ -53,6 +57,21 @@ bool UniRobot::CameraInfoService(common::CameraInfo::Request &req, common::Camer
     res.width = mCamera->getWidth();
     return true;
 }
+
+void UniRobot::HeadTaskUpdate(const common::HeadTask::ConstPtr &p)
+{
+    mHeadMtx.lock();
+    mHeadtask = *p;
+    mHeadMtx.unlock();
+}
+
+void UniRobot::BodyTaskUpdate(const common::BodyTask::ConstPtr &p)
+{
+    mBodyMtx.lock();
+    mBodytask = *p;
+    mBodyMtx.unlock();
+}
+
 
 void UniRobot::PublishImage()
 {
@@ -83,6 +102,14 @@ void UniRobot::PublishImage()
 }
 
 int UniRobot::myStep() {
+    common::HeadAngles head;
+    head.yaw = mHAngles.yaw;
+    head.pitch = mHAngles.pitch;
+    mHeadPublisher.publish(head);
+    mHeadMtx.lock();
+    mHAngles.pitch = seumath::deg2rad(mHeadtask.pitch);
+    mHAngles.yaw = seumath::deg2rad(mHeadtask.yaw);
+    mHeadMtx.unlock();
     setPositions();
     checkFall();
     ros::spinOnce();
@@ -105,8 +132,8 @@ void UniRobot::checkFall(){
     imu.pitch = rpy[1];
     imu.roll = rpy[0];
     imu.fall = fall_type;
-    imu.stamp = ros::Time::now().nsec;
-    mImagePublisher.publish(imu);
+    imu.stamp = ros::Time::now().toNSec();
+    mImuPublisher.publish(imu);
     //printf("roll=%f, pitch=%f, yaw=%f\n", rpy[0], rpy[1], rpy[2]);
     //printf("%d\n", fall_type);
 }
@@ -132,12 +159,39 @@ void UniRobot::run(){
             runAct("side_getup");
         }else
         {
-            mWalkParams.enabledGain = 1.0;
-            mWalkParams.stepGain = 0.03;
-            mWalkParams.lateralGain = 0.0;
-            mWalkParams.turnGain = 0.0;
-            isWalking = true;
-            runWalk(mWalkParams, 2.0, phase, time);
+            mBodyMtx.lock();
+            BodyTask btmp = mBodytask;
+            mBodyMtx.unlock();
+            
+            if(btmp.type == BodyTask::TASK_WALK)
+            {
+                if(isWalking)
+                {
+                    mWalkParams.enabledGain = 1.0;
+                    mWalkParams.stepGain = btmp.step;
+                    mWalkParams.lateralGain = btmp.lateral;
+                    mWalkParams.turnGain = seumath::deg2rad(btmp.turn);
+                    runWalk(mWalkParams, 2.0, phase, time);
+                }
+                else
+                {
+                    isWalking = true;
+                    mWalkParams.enabledGain = 1.0;
+                    mWalkParams.stepGain = 0.0;
+                    mWalkParams.lateralGain = 0.0;
+                    mWalkParams.turnGain = 0.0;
+                    runWalk(mWalkParams, 2.0, phase, time);
+                }
+            }
+            else if(btmp.type == BodyTask::TASK_ACT)
+            {
+                stopWalk(phase, time);
+                runAct(btmp.actname);
+            }
+            else
+            {
+                myStep();
+            }
         }
     }
 }

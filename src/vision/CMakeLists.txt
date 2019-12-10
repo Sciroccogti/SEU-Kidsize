@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  config
   common
   seuimage
   darknet
@@ -165,7 +166,7 @@ add_executable(image_process src/image_process.cpp src/vision_parser.cpp)
 target_link_libraries(camera
   ${catkin_LIBRARIES}
   MVSDK
-  common
+  config
 )
 
 target_link_libraries(image_process
@@ -177,7 +178,7 @@ target_link_libraries(image_process
   opencv_core
   opencv_imgproc
   opencv_imgcodecs
-  common
+  config
 )
 
 #############

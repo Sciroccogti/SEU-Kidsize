@@ -58,6 +58,8 @@ add_message_files(
   HeadAngles.msg
   BodyTask.msg
   HeadTask.msg
+  PixelPoint.msg
+  ImageResult.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -128,14 +130,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+  # include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-add_library(common STATIC
-  src/basic_parser.cpp
-)
+# add_library(common STATIC
+#   src/basic_parser.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

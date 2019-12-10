@@ -3,6 +3,9 @@
 #include <sensor_msgs/CompressedImage.h>
 #include <common/CameraProperty.h>
 #include <common/CameraInfo.h>
+#include <common/ImageResult.h>
+#include <common/ImuData.h>
+#include <common/HeadAngles.h>
 #include <common/datadef.hpp>
 #include <darknet/network.h>
 #include <darknet/parser.h>
@@ -10,6 +13,7 @@
 #include <std_srvs/SetBool.h>
 #include <mutex>
 #include <atomic>
+#include <queue>
 #include "vision_parser.hpp"
 #include <seuimage/seuimage.hpp>
 
@@ -19,6 +23,8 @@ bool MallocMemory();
 void NetworkInit(std::string cfg, std::string wts);
 void GetCameraInfo(ros::NodeHandle &node);
 void ImageUpdate(const sensor_msgs::Image::ConstPtr &p);
+void ImuUpdate(const common::ImuData::ConstPtr &p);
+void HeadUpdate(const common::HeadAngles::ConstPtr &p);
 void Run(const ros::TimerEvent& event);
 
 void ImagePublish(const cv::Mat &bgr);
@@ -28,10 +34,10 @@ int camera_width;
 int camera_height;
 int camera_type;
 common::CameraProperty camera_property;
-
 const int width=640;
 const int height=480;
-
+std::mutex image_mutex;
+std::atomic_bool send_src(false);
 cv::Mat cmrMat;
 CudaMatC srcMat;
 CudaMatC rgbMat;
@@ -41,12 +47,16 @@ CudaMatC relMat;
 CudaMatC netMat;
 CudaMatF netfMat;
 CudaMatF yoloMat;
-
 network yolo;
-std::mutex image_mutex;
-std::atomic_bool send_src(false);
+
+std::mutex imu_mutex;
+common::ImuData imuData;
+std::mutex head_mutex;
+std::queue<common::HeadAngles> headDatas;
+const int headQueueSize = 4;
 
 ros::Publisher imagePublisher;
+ros::Publisher resultPublisher;
 
 int main(int argc, char **argv)
 {
@@ -63,6 +73,8 @@ int main(int argc, char **argv)
         usleep(1000000);
     }
     GetCameraInfo(node);
+    if(camera_type == common::CameraInfo::Response::CAMERA_NONE)
+        return 0;
     ROS_INFO("w=%d, h=%d, type=%d", camera_width, camera_height, camera_type);
     std::string cfgfile;
     std::string visionfile;
@@ -98,8 +110,11 @@ int main(int argc, char **argv)
         ROS_ERROR("MallocMemory failed");
         return 0;
     }
-    ros::Subscriber imageSubScriber = node.subscribe("/camera/image", 1, ImageUpdate);
-    imagePublisher = node.advertise<sensor_msgs::CompressedImage>("/vision/image/compressed", 1);
+    ros::Subscriber imageSubScriber = node.subscribe("/sensor/image", 1, ImageUpdate);
+    ros::Subscriber imuSubScriber = node.subscribe("/sensor/imu", 1, ImuUpdate);
+    ros::Subscriber headSubScriber = node.subscribe("/sensor/head", 1, HeadUpdate);
+    imagePublisher = node.advertise<sensor_msgs::CompressedImage>("/result/vision/compressed", 1);
+    resultPublisher = node.advertise<common::ImageResult>("/result/vision/imgproc", 1);
     ros::ServiceServer typeServer = node.advertiseService("/sendsrc", SendSrcService);
     ros::Timer timer = node.createTimer(ros::Duration(0.1), Run);
     ros::spin();
@@ -205,6 +220,33 @@ void Run(const ros::TimerEvent& event)
     std::sort(post_dets.rbegin(), post_dets.rend());
     free_detections(dets, nboxes);
 
+    common::ImageResult imgResult;
+    if (!ball_dets.empty())
+    {
+        imgResult.has_ball = true;
+        imgResult.ball.x = ball_dets[0].x+ball_dets[0].w/2;
+        imgResult.ball.y = ball_dets[0].y+ball_dets[0].h;
+    }
+    uint32_t posts_cnt = post_dets.size();
+    imgResult.posts.resize(posts_cnt>2?2:posts_cnt);
+    for (uint32_t i = 0; i < imgResult.posts.size(); i++)
+    {
+        imgResult.has_post = true;
+        imgResult.posts[i].x = ball_dets[i].x+ball_dets[i].w/2;
+        imgResult.posts[i].y = ball_dets[i].y+ball_dets[i].h/3*2;
+    }
+    imu_mutex.lock();
+    imgResult.body_yaw = imuData.yaw;
+    imu_mutex.unlock();
+    head_mutex.lock();
+    if(headDatas.size()>0)
+    {
+        imgResult.head_pitch = headDatas.front().pitch;
+        imgResult.head_yaw = headDatas.front().yaw;
+        headDatas.pop();
+    }
+    head_mutex.unlock();
+    resultPublisher.publish(imgResult);
 
     bool dbg;
     ros::param::get("debug", dbg);
@@ -218,7 +260,6 @@ void Run(const ros::TimerEvent& event)
         }
         cv::Mat bgr;
         cv::cvtColor(rgb, bgr, CV_RGB2BGR);
-        
         
         if(!send_src)
         {
@@ -317,6 +358,21 @@ void ImageUpdate(const sensor_msgs::Image::ConstPtr &p)
     image_mutex.lock();
     memcpy(cmrMat.data, &(p->data[0]), cmrMat.rows*cmrMat.cols*cmrMat.channels());
     image_mutex.unlock();
+}
+
+void ImuUpdate(const common::ImuData::ConstPtr &p)
+{
+    imu_mutex.lock();
+    imuData = *p;
+    imu_mutex.unlock();
+}
+
+void HeadUpdate(const common::HeadAngles::ConstPtr &p)
+{
+    head_mutex.lock();
+    if(headDatas.size()>= headQueueSize) headDatas.pop();
+    headDatas.push(*p);
+    head_mutex.unlock();
 }
 
 void ImagePublish(const cv::Mat &bgr)

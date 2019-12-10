@@ -50,6 +50,7 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>common</build_depend>
+  <build_depend>config</build_depend>
   <build_depend>robot</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>seumath</build_depend>

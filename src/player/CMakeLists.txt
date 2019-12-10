@@ -9,6 +9,7 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   common
+  config
   roscpp
   geometry_msgs
   seumath
@@ -151,7 +152,6 @@ add_executable(player src/player.cpp ${DEV_FILES})
 ## Specify libraries to link a library or executable target against
 target_link_libraries(player
   ${catkin_LIBRARIES}
-  common
   robot
 )
 

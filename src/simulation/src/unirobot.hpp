@@ -13,6 +13,9 @@
 #include <common/HeadAngles.h>
 #include <common/CameraInfo.h>
 #include <common/ImuData.h>
+#include <common/BodyTask.h>
+#include <common/HeadTask.h>
+#include <mutex>
 #include "walk/IKWalk.hpp"
 
 class UniRobot: public webots::Robot
@@ -31,9 +34,18 @@ private:
     ros::ServiceServer mCameraInfoServer;
     ros::Publisher mImagePublisher;
     ros::Publisher mImuPublisher;
+    ros::Publisher mHeadPublisher;
+    ros::Subscriber mHeadTaskSubscriber;
+    ros::Subscriber mBodyTaskSubscriber;
 
     bool CameraInfoService(common::CameraInfo::Request &req, common::CameraInfo::Response &res);
     void PublishImage();
+    void HeadTaskUpdate(const common::HeadTask::ConstPtr &p);
+    void BodyTaskUpdate(const common::BodyTask::ConstPtr &p);
+
+    mutable std::mutex mHeadMtx, mBodyMtx;
+    common::BodyTask mBodytask;
+    common::HeadTask mHeadtask;
 
     std::vector<common::BodyAngles> mBodyAngles;
     Rhoban::IKWalkParameters mWalkParams;

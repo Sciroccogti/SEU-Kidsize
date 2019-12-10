@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <ros/package.h>
-#include <common/basic_parser.hpp>
+#include <config/basic_parser.hpp>
 
 using namespace std;
 using namespace common;

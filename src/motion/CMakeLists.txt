@@ -9,6 +9,7 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   common
+  config
   robot
   roscpp
   rospy
@@ -164,7 +165,7 @@ add_executable(motion src/motion.cpp ${WALK_FILES} ${ACT_FILES} ${SCAN_FILES})
 ## Specify libraries to link a library or executable target against
 target_link_libraries(motion
   ${catkin_LIBRARIES}
-  common
+  config
   robot
 )
 
