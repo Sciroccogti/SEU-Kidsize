@@ -3,9 +3,9 @@
 #include <opencv2/opencv.hpp>
 #include <fstream>
 #include <ros/ros.h>
-#include <std_srvs/SetBool.h>
-#include <common/HeadTask.h>
 #include <common/common.hpp>
+#include <common/SetInt.h>
+#include <cv_bridge/cv_bridge.h>
 
 using namespace cv;
 using namespace std;
@@ -29,70 +29,86 @@ ImageMonitor::ImageMonitor(ros::NodeHandle &n): node(n)
     imageLab = new ImageLabel(width_, height_);
     curr_image_.create(height_, width_, CV_8UC3);
 
-    pitchSlider = new QSlider(Qt::Vertical);
-    pitchSlider->setRange(-90, 90);
-    yawSlider = new QSlider(Qt::Horizontal);
-    yawSlider->setRange(-110, 110);
-
-    imageSrcBox = new QCheckBox("Send Src");
+    sendTypeBox = new QComboBox();
+    QStringList tps;
+    tps<<"None"<<"Source"<<"Target";
+    sendTypeBox->addItems(tps);
     imageSaveBox = new QCheckBox("Save Image");
 
     QVBoxLayout *leftLayout = new QVBoxLayout();
     leftLayout->addWidget(imageLab);
-    leftLayout->addWidget(yawSlider);
 
     QVBoxLayout *ctrlLayout = new QVBoxLayout;
-    ctrlLayout->addWidget(imageSrcBox);
+    ctrlLayout->addWidget(sendTypeBox);
     ctrlLayout->addWidget(imageSaveBox);
 
     QHBoxLayout *mainLayout = new QHBoxLayout();
     mainLayout->addLayout(leftLayout);
-    mainLayout->addWidget(pitchSlider);
     mainLayout->addLayout(ctrlLayout);
 
     QWidget *mainWidget  = new QWidget();
     mainWidget->setLayout(mainLayout);
     this->setCentralWidget(mainWidget);
 
-    yawLab = new QLabel();
-    pitchLab = new QLabel();
-    netLab = new QLabel();
-    netLab->setFixedWidth(100);
-
-    statusBar()->addWidget(pitchLab);
-    statusBar()->addWidget(yawLab);
-    statusBar()->addWidget(netLab);
     timer = new QTimer;
     timer->start(50);
     image_count_=0;
 
     connect(timer, &QTimer::timeout, this, &ImageMonitor::procTimer);
-    connect(yawSlider, &QSlider::valueChanged, this, &ImageMonitor::procSlider);
-    connect(pitchSlider, &QSlider::valueChanged, this, &ImageMonitor::procSlider);
     connect(imageLab, &ImageLabel::shot, this, &ImageMonitor::procShot);
-    connect(imageSrcBox, &QCheckBox::stateChanged, this, &ImageMonitor::procImageBox);
-    headPub = node.advertise<common::HeadTask>("/headtask", 2);
-    imageSub = node.subscribe("/vision/image/compressed", 2, &ImageMonitor::ImageUpdate, this);
+    typedef void (QComboBox::*QComboIntSignal)(int);
+    connect(sendTypeBox, static_cast<QComboIntSignal>(&QComboBox::activated), 
+                            this, &ImageMonitor::procSendTypeBox);
+    image_transport::ImageTransport it(node);
+    image_transport::TransportHints hints("compressed");
+    imageSub = it.subscribe("/result/vision", 1, &ImageMonitor::ImageUpdate, this, hints);
 }
 
-void ImageMonitor::ImageUpdate(const sensor_msgs::CompressedImage::ConstPtr &image)
+void ImageMonitor::ImageUpdate(const sensor_msgs::Image::ConstPtr &msg)
 {
-    vector<uint8_t> buf(image->data.size());
-    memcpy(&(buf[0]), &(image->data[0]), image->data.size());
     try
     {
-        Mat image_data = imdecode(buf, cv::IMREAD_COLOR);
-        if(imageSaveBox->isChecked()&&image_count_++%10==0)
-        {
-            imwrite(String(get_time()+".png"), image_data);
-        }
-        Mat dst;
-        cvtColor(image_data, dst, CV_BGR2RGB);
-        QImage dstImage((const unsigned char *)(dst.data), dst.cols, dst.rows, QImage::Format_RGB888);
-        imageLab->set_image(dstImage);
+        // First let cv_bridge do its magic
+        cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::RGB8);
+        curr_image_ = cv_ptr->image;
     }
-    catch(std::exception &e){
-        ROS_INFO("%s", e.what());
+    catch (cv_bridge::Exception& e)
+    {
+        try
+        {
+            // If we're here, there is no conversion that makes sense, but let's try to imagine a few first
+            cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg);
+            if (msg->encoding == "CV_8UC3")
+            {
+                // assuming it is rgb
+                curr_image_ = cv_ptr->image;
+            } else if (msg->encoding == "8UC1") {
+                // convert gray to rgb
+                cv::cvtColor(cv_ptr->image, curr_image_, CV_GRAY2RGB);
+            } else if (msg->encoding == "16UC1" || msg->encoding == "32FC1") {
+                imageLab->set_image(QImage());
+            } else {
+                qWarning("ImageView.callback_image() could not convert image from '%s' to 'rgb8' (%s)", msg->encoding.c_str(), e.what());
+                imageLab->set_image(QImage());
+                return;
+            }
+        }
+        catch (cv_bridge::Exception& e)
+        {
+            qWarning("ImageView.callback_image() while trying to convert image from '%s' to 'rgb8' an exception was thrown (%s)", msg->encoding.c_str(), e.what());
+            imageLab->set_image(QImage());
+            return;
+        }
+    }
+    QImage dstImage(curr_image_.data, curr_image_.cols, curr_image_.rows, QImage::Format_RGB888);
+    imageLab->set_image(dstImage);
+    image_count_ ++;
+    if(imageSaveBox->isChecked() && image_count_%10 == 0)
+    {
+        Mat bgr;
+        cvtColor(curr_image_, bgr, CV_RGB2BGR);
+        string name = get_current_time() + ".png";
+        imwrite(name, bgr);
     }
 }
 
@@ -100,7 +116,6 @@ void ImageMonitor::procTimer()
 {
     ros::spinOnce();
 }
-
 
 void ImageMonitor::procShot(QRect rect)
 {
@@ -114,22 +129,9 @@ void ImageMonitor::procShot(QRect rect)
     }
 }
 
-void ImageMonitor::procImageBox(int state)
+void ImageMonitor::procSendTypeBox(int idx)
 {
-    std_srvs::SetBool srv;
-    srv.request.data = state;
-    ros::service::call("/sendsrc", srv);
-}
-
-void ImageMonitor::procSlider(int v)
-{
-    pitchLab->setText(QString::number(pitchSlider->value()));
-    yawLab->setText(QString::number(yawSlider->value()));
-    float yaw = -(float)(yawSlider->value());
-    float pitch = -(float)(pitchSlider->value());
-    common::HeadTask task;
-    task.mode = task.ModeLookAt;
-    task.yaw = yaw;
-    task.pitch = pitch;
-    headPub.publish(task);
+    common::SetInt srv;
+    srv.request.number = idx;
+    ros::service::call("/setting/sendtype", srv);
 }

@@ -36,8 +36,10 @@ ActionDebuger::ActionDebuger(ros::NodeHandle &n): node(n)
         ROS_ERROR("%s", e.what());
         exit(0);
     }
-    parse(act_file_, act_map_, pos_map_);
+    
     mRbt = make_shared<Robot>(robot_file, offset_file);
+    action_eng_ = make_shared<ActionEngine>(act_file_, mRbt);
+
     robot_gl_ = new RobotGL(mRbt->get_main_bone(), mRbt->get_joint_map());
     QVBoxLayout *leftLayout = new QVBoxLayout;
     leftLayout->addWidget(robot_gl_);
@@ -119,9 +121,11 @@ ActionDebuger::ActionDebuger(ros::NodeHandle &n): node(n)
     m_pPosListWidget = new QListWidget();
     m_pPosListWidget->setMinimumWidth(240);
     btnrunPos = new QPushButton("Run Pos");
+    btnOutWebots = new QPushButton("Export Webots");
     QVBoxLayout *posLayout = new QVBoxLayout;
     posLayout->addWidget(m_pPosListWidget);
     posLayout->addWidget(btnrunPos);
+    posLayout->addWidget(btnOutWebots);
 
     m_pActListWidget = new QListWidget();
     mButtonInsertPosFront = new QPushButton(tr("Insert Pos Front"));
@@ -169,141 +173,9 @@ ActionDebuger::ActionDebuger(ros::NodeHandle &n): node(n)
     connect(mButtonDeletePos, &QPushButton::clicked, this, &ActionDebuger::procButtonDeletePos);
     connect(mButtonSavePos, &QPushButton::clicked, this, &ActionDebuger::procButtonSavePos);
     connect(btnrunPos, &QPushButton::clicked, this, &ActionDebuger::procButtonRunPos);
+    connect(btnOutWebots, &QPushButton::clicked, this, &ActionDebuger::procButtonWebots);
     connect(motionBtnGroup, static_cast<void(QButtonGroup::*)(int)>(&QButtonGroup::buttonClicked), this, &ActionDebuger::updateSlider);
     connect(timer, &QTimer::timeout, this, &ActionDebuger::procTimer);
-}
-
-bool ActionDebuger::get_degs(robot::PoseMap &act_pose,  common::BodyAngles &bAngles)
-{
-    TransformMatrix body_mat, leftfoot_mat, rightfoot_mat;
-    body_mat = mRbt->get_body_mat_from_pose(act_pose[MOTION_BODY]);
-    leftfoot_mat = mRbt->get_foot_mat_from_pose(act_pose[MOTION_LEFT_FOOT], true);
-    rightfoot_mat = mRbt->get_foot_mat_from_pose(act_pose[MOTION_RIGHT_FOOT], false);
-
-    Vector3d lefthand, righthand;
-    righthand[0] = act_pose[MOTION_RIGHT_HAND].x;
-    righthand[2] = act_pose[MOTION_RIGHT_HAND].z;
-    lefthand[0] = act_pose[MOTION_LEFT_HAND].x;
-    lefthand[2] = act_pose[MOTION_LEFT_HAND].z;
-
-    vector<double> degs;
-    if(!mRbt->leg_inverse_kinematics(body_mat, leftfoot_mat, degs, true))
-    {
-        ROS_WARN("left foot kinematics failed");
-        return false;
-    }
-    bAngles.left_hip_yaw = rad2deg(degs[0]);
-    bAngles.left_hip_roll = rad2deg(degs[1]);
-    bAngles.left_hip_pitch = rad2deg(degs[2]);
-    bAngles.left_knee = rad2deg(degs[3]);
-    bAngles.left_ankle_pitch = rad2deg(degs[4]);
-    bAngles.left_ankle_roll = rad2deg(degs[5]);
-
-    if(!mRbt->leg_inverse_kinematics(body_mat, rightfoot_mat, degs, false)) 
-    {
-        ROS_WARN("right foot kinematics failed");
-        return false;
-    }
-    bAngles.right_hip_yaw = rad2deg(degs[0]);
-    bAngles.right_hip_roll = rad2deg(degs[1]);
-    bAngles.right_hip_pitch = rad2deg(degs[2]);
-    bAngles.right_knee = rad2deg(degs[3]);
-    bAngles.right_ankle_pitch = rad2deg(degs[4]);
-    bAngles.right_ankle_roll = rad2deg(degs[5]);
-
-    if(!mRbt->arm_inverse_kinematics(lefthand, degs))
-    {
-        ROS_WARN("left hand kinematics failed");
-        return false;
-    }
-    bAngles.left_shoulder = rad2deg(degs[0]);
-    bAngles.left_elbow = -rad2deg(degs[1]);
-    if(!mRbt->arm_inverse_kinematics(righthand, degs)) 
-    {
-        ROS_WARN("right hand kinematics failed");
-        return false;
-    }
-    bAngles.right_shoulder = rad2deg(degs[0]);
-    bAngles.right_elbow = rad2deg(degs[1]);
-    return true;
-}
-
-std::vector< std::map<robot::RobotMotion, robot::RobotPose> > 
-    ActionDebuger::get_poses(std::map<robot::RobotMotion, robot::RobotPose> &pos1,
-            std::map<robot::RobotMotion, robot::RobotPose> &pos2, int act_time)
-{
-    Eigen::Vector3d poseb1(pos1[robot::MOTION_BODY].x, pos1[robot::MOTION_BODY].y, pos1[robot::MOTION_BODY].z);
-    Eigen::Vector3d poseb2(pos2[robot::MOTION_BODY].x, pos2[robot::MOTION_BODY].y, pos2[robot::MOTION_BODY].z);
-    Eigen::Vector3d posel1(pos1[robot::MOTION_LEFT_FOOT].x, pos1[robot::MOTION_LEFT_FOOT].y, pos1[robot::MOTION_LEFT_FOOT].z);
-    Eigen::Vector3d posel2(pos2[robot::MOTION_LEFT_FOOT].x, pos2[robot::MOTION_LEFT_FOOT].y, pos2[robot::MOTION_LEFT_FOOT].z);
-    Eigen::Vector3d poser1(pos1[robot::MOTION_RIGHT_FOOT].x, pos1[robot::MOTION_RIGHT_FOOT].y, pos1[robot::MOTION_RIGHT_FOOT].z);
-    Eigen::Vector3d poser2(pos2[robot::MOTION_RIGHT_FOOT].x, pos2[robot::MOTION_RIGHT_FOOT].y, pos2[robot::MOTION_RIGHT_FOOT].z);
-    Eigen::Vector3d pposeb1(pos1[robot::MOTION_BODY].pitch, pos1[robot::MOTION_BODY].roll, pos1[robot::MOTION_BODY].yaw);
-    Eigen::Vector3d pposeb2(pos2[robot::MOTION_BODY].pitch, pos2[robot::MOTION_BODY].roll, pos2[robot::MOTION_BODY].yaw);
-    Eigen::Vector3d pposel1(pos1[robot::MOTION_LEFT_FOOT].pitch, pos1[robot::MOTION_LEFT_FOOT].roll, pos1[robot::MOTION_LEFT_FOOT].yaw);
-    Eigen::Vector3d pposel2(pos2[robot::MOTION_LEFT_FOOT].pitch, pos2[robot::MOTION_LEFT_FOOT].roll, pos2[robot::MOTION_LEFT_FOOT].yaw);
-    Eigen::Vector3d pposer1(pos1[robot::MOTION_RIGHT_FOOT].pitch, pos1[robot::MOTION_RIGHT_FOOT].roll, pos1[robot::MOTION_RIGHT_FOOT].yaw);
-    Eigen::Vector3d pposer2(pos2[robot::MOTION_RIGHT_FOOT].pitch, pos2[robot::MOTION_RIGHT_FOOT].roll, pos2[robot::MOTION_RIGHT_FOOT].yaw);
-
-    Eigen::Vector3d poselh1(pos1[robot::MOTION_LEFT_HAND].x, pos1[robot::MOTION_LEFT_HAND].y, pos1[robot::MOTION_LEFT_HAND].z);
-    Eigen::Vector3d poselh2(pos2[robot::MOTION_LEFT_HAND].x, pos2[robot::MOTION_LEFT_HAND].y, pos2[robot::MOTION_LEFT_HAND].z);
-    Eigen::Vector3d poserh1(pos1[robot::MOTION_RIGHT_HAND].x, pos1[robot::MOTION_RIGHT_HAND].y, pos1[robot::MOTION_RIGHT_HAND].z);
-    Eigen::Vector3d poserh2(pos2[robot::MOTION_RIGHT_HAND].x, pos2[robot::MOTION_RIGHT_HAND].y, pos2[robot::MOTION_RIGHT_HAND].z);
-
-    Eigen::Vector3d dposeb = poseb2 - poseb1;
-    Eigen::Vector3d dposel = posel2 - posel1;
-    Eigen::Vector3d dposer = poser2 - poser1;
-    Eigen::Vector3d dposelh = poselh2 - poselh1;
-    Eigen::Vector3d dposerh = poserh2 - poserh1;
-
-    Eigen::Vector3d dpposeb = pposeb2 - pposeb1;
-    Eigen::Vector3d dpposel = pposel2 - pposel1;
-    Eigen::Vector3d dpposer = pposer2 - pposer1;
-    int count = act_time;
-    double dbx = dposeb.x() / count, dby = dposeb.y() / count, dbz = dposeb.z() / count;
-    double dbpi = dpposeb.x() / count, dbro = dpposeb.y() / count, dbya = dpposeb.z() / count;
-    double dlx = dposel.x() / count, dly = dposel.y() / count, dlz = dposel.z() / count;
-    double dlpi = dpposel.x() / count, dlro = dpposel.y() / count, dlya = dpposel.z() / count;
-    double drx = dposer.x() / count, dry = dposer.y() / count, drz = dposer.z() / count;
-    double drpi = dpposer.x() / count, drro = dpposer.y() / count, drya = dpposer.z() / count;
-
-    double dlhx = dposelh.x() / count, dlhz = dposelh.z() / count;
-    double drhx = dposerh.x() / count, drhz = dposerh.z() / count;
-    std::vector< std::map<robot::RobotMotion, robot::RobotPose> > act_poses;
-    for (int i = 0; i < count; i++)
-    {
-        std::map<robot::RobotMotion, robot::RobotPose> temp_pose_map;
-        robot::RobotPose temp_pose;
-        temp_pose.x = poselh1.x() + i * dlhx;
-        temp_pose.z = poselh1.z() + i * dlhz;
-        temp_pose_map[robot::MOTION_LEFT_HAND] = temp_pose;
-        temp_pose.x = poserh1.x() + i * drhx;
-        temp_pose.z = poserh1.z() + i * drhz;
-        temp_pose_map[robot::MOTION_RIGHT_HAND] = temp_pose;
-        temp_pose.x = poseb1.x() + i * dbx;
-        temp_pose.y = poseb1.y() + i * dby;
-        temp_pose.z = poseb1.z() + i * dbz;
-        temp_pose.pitch = pposeb1.x() + i * dbpi;
-        temp_pose.roll = pposeb1.y() + i * dbro;
-        temp_pose.yaw = pposeb1.z() + i * dbya;
-        temp_pose_map[robot::MOTION_BODY] = temp_pose;
-        temp_pose.x = posel1.x() + i * dlx;
-        temp_pose.y = posel1.y() + i * dly;
-        temp_pose.z = posel1.z() + i * dlz;
-        temp_pose.pitch = pposel1.x() + i * dlpi;
-        temp_pose.roll = pposel1.y() + i * dlro;
-        temp_pose.yaw = pposel1.z() + i * dlya;
-        temp_pose_map[robot::MOTION_LEFT_FOOT] = temp_pose;
-        temp_pose.x = poser1.x() + i * drx;
-        temp_pose.y = poser1.y() + i * dry;
-        temp_pose.z = poser1.z() + i * drz;
-        temp_pose.pitch = pposer1.x() + i * drpi;
-        temp_pose.roll = pposer1.y() + i * drro;
-        temp_pose.yaw = pposer1.z() + i * drya;
-        temp_pose_map[robot::MOTION_RIGHT_FOOT] = temp_pose;
-        act_poses.push_back(temp_pose_map);
-    }
-    return act_poses;
 }
 
 void ActionDebuger::procPosNameChanged(int id)
@@ -318,7 +190,8 @@ void ActionDebuger::procPosNameChanged(int id)
     string new_name = pCur_PosWidget->pos_name->text().toStdString();
     string old_name = pCur_PosWidget->pos_name_;
     string act_name = m_pActListWidget->currentItem()->text().toStdString();
-
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     if (pos_map_.find(new_name) == pos_map_.end())
     {
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Warning", "pos: " + QString::fromStdString(new_name) + " does not exist, create it?",
@@ -343,6 +216,7 @@ void ActionDebuger::procPosNameChanged(int id)
 void ActionDebuger::procPosTimeChanged(int id)
 {
     CPosListWidget *pCur_PosWidget = (CPosListWidget *) m_pPosListWidget->itemWidget(m_pPosListWidget->item(id - 1));
+    auto &act_map_ = action_eng_->get_act_map();
     string act_name = m_pActListWidget->currentItem()->text().toStdString();
     act_map_[act_name].poses[id - 1].act_time = pCur_PosWidget->pos_time->text().toInt();
 }
@@ -356,7 +230,7 @@ void ActionDebuger::initActs()
 {
     m_pPosListWidget->clear();
     m_pActListWidget->clear();
-
+    auto &act_map_ = action_eng_->get_act_map();
     for (auto &act : act_map_)
     {
         m_pActListWidget->addItem(QString::fromStdString(act.second.name));
@@ -774,6 +648,7 @@ void ActionDebuger::updateJDInfo()
 
 void ActionDebuger::updatePosList(string act_name)
 {
+    auto &act_map_ = action_eng_->get_act_map();
     RobotAct act = act_map_[act_name];
     QListWidgetItem *pListItem;
     CPosListWidget *pPosWidget;
@@ -831,7 +706,7 @@ void ActionDebuger::procPosSelect(QListWidgetItem *item)
             return;
         }
     }
-
+    auto &pos_map_ = action_eng_->get_pos_map();
     pos_saved = true;
     CPosListWidget *pPosWidget = (CPosListWidget *) m_pPosListWidget->itemWidget(item);
     string pos_name = pPosWidget->pos_name_;
@@ -840,22 +715,6 @@ void ActionDebuger::procPosSelect(QListWidgetItem *item)
     pose_map_ = pos_map_[pos_name].pose_info;
     updateSlider(static_cast<int>(motion_));
     turn_joint();
-    std::cout<< pPosWidget->time_<<std::endl;
-    for(int i=11; i<23; i++)
-    {
-        std::cout<<deg2rad(joint_degs_[i]);
-        if(i==16||i==22)
-            std::cout<<std::endl;
-        else
-            std::cout<<' ';
-    }
-    for(int i=7; i<11; i++)
-    {
-        std::cout<<deg2rad(joint_degs_[i]);
-        std::cout<<' ';
-    }
-    std::cout<<std::endl;
-    std::cout<<std::endl;
     mSliderGroup->setEnabled(true);
     last_pos_id = m_pPosListWidget->currentRow();
 }
@@ -886,7 +745,8 @@ void ActionDebuger::procButtonInsertPosFront()
     }
 
     bool exist = false;
-
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     if (pos_map_.find(new_pos_name) != pos_map_.end())
     {
         exist = true;
@@ -938,7 +798,8 @@ void ActionDebuger::procButtonInsertPosBack()
     }
 
     bool exist = false;
-
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     if (pos_map_.find(new_pos_name) != pos_map_.end())
     {
         exist = true;
@@ -995,6 +856,8 @@ void ActionDebuger::procButtonDeletePos()
     }
 
     CPosListWidget *pCur_PosWidget = (CPosListWidget *) m_pPosListWidget->itemWidget(m_pPosListWidget->currentItem());
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     int id = pCur_PosWidget->m_id->text().toInt();
     string act_name = m_pActListWidget->currentItem()->text().toStdString();
     act_map_[act_name].poses.erase(act_map_[act_name].poses.begin() + id - 1);
@@ -1019,7 +882,8 @@ void ActionDebuger::procButtonSavePos()
     {
         return;
     }
-
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     pos_map_[pos_name].pose_info = pose_map_;
     pos_saved = true;
     save(act_file_, act_map_, pos_map_);
@@ -1032,7 +896,8 @@ void ActionDebuger::procButtonDeleteAction()
         QMessageBox::warning(this, "Error", "No act select!");
         return;
     }
-
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     string act_name = m_pActListWidget->currentItem()->text().toStdString();
     auto iter = act_map_.begin();
 
@@ -1060,6 +925,8 @@ void ActionDebuger::procButtonSaveAction()
     {
         return;
     }
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     save(act_file_, act_map_, pos_map_);
 }
 
@@ -1072,7 +939,8 @@ void ActionDebuger::procButtonAddAction()
     {
         return;
     }
-
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     if (ok)
     {
         if (act_map_.find(name) != act_map_.end())
@@ -1091,6 +959,8 @@ void ActionDebuger::procButtonAddAction()
 void ActionDebuger::removeUnusedPos()
 {
     bool fd;
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     auto p_iter = pos_map_.begin();
 
     while (p_iter != pos_map_.end())
@@ -1133,48 +1003,42 @@ void ActionDebuger::procButtonRunPos()
         return;
     }
 
-    CPosListWidget *pCur_PosWidget = (CPosListWidget *) m_pPosListWidget->itemWidget(m_pPosListWidget->currentItem());
+    CPosListWidget *pCur_PosWidget = (CPosListWidget *) 
+        m_pPosListWidget->itemWidget(m_pPosListWidget->currentItem());
     int id = pCur_PosWidget->m_id->text().toInt();
     string act_name = m_pActListWidget->currentItem()->text().toStdString();
+    action_eng_->runAction(act_name, id);
+}
+
+void ActionDebuger::procButtonWebots()
+{
+    string act_name = m_pActListWidget->currentItem()->text().toStdString();
+    auto &act_map_ = action_eng_->get_act_map();
+    auto &pos_map_ = action_eng_->get_pos_map();
     RobotAct act = act_map_[act_name];
-    RobotPos pos;
-    common::AddAngles addSrv;
-    addSrv.request.part = "body";
-    common::BodyAngles &bAngles = addSrv.request.body;
-    std::vector<PoseMap> poses_temp;
-    std::vector<int> pos_times_temp;
-
-    std::vector<robot::RobotOnePos> poses=act.poses;
-    for(int i=0; i<id; i++)
+    std::cout<<"***********************\n"<< act_name<<std::endl;
+    for(int i=0; i<act.poses.size(); i++)
     {
-        pos_times_temp.push_back(poses[i].act_time);
-        poses_temp.push_back(pos_map_[poses[i].pos_name].pose_info);
-    }
-
-    std::map<int, float> one_pos_deg;
-    std::map<std::string, float> jdegs;
-    std::map<robot::RobotMotion, robot::RobotPose> pos1, pos2;
-    pos1 = poses_temp[0];
-
-    bool ret = get_degs(pos1, bAngles);
-    if(!ret) return;
-    ros::service::call("/addangles", addSrv);
-    if(poses_temp.size()<2) return;
-    for (int i = 1; i < poses_temp.size(); i++)
-    {
-        pos1 = poses_temp[i - 1];
-        pos2 = poses_temp[i];
-        std::vector< std::map<robot::RobotMotion, robot::RobotPose> > act_poses;
-        act_poses = get_poses(pos1, pos2, pos_times_temp[i]);
-        if(i==poses_temp.size()-1)
-            act_poses.push_back(pos2);
-
-        for (auto act_pose : act_poses)
+        auto &pose = act.poses[i];
+        pose_map_ = pos_map_[pose.pos_name].pose_info;
+        updateSlider(static_cast<int>(motion_));
+        turn_joint();
+        std::cout<< pose.act_time<<std::endl;
+        for(int i=11; i<23; i++)
         {
-            ret = get_degs(act_pose, bAngles);
-            if(!ret) return;
-            ros::service::call("/addangles", addSrv);
+            std::cout<<deg2rad(joint_degs_[i]);
+            if(i==16||i==22)
+                std::cout<<std::endl;
+            else
+                std::cout<<' ';
         }
+        for(int i=7; i<11; i++)
+        {
+            std::cout<<deg2rad(joint_degs_[i]);
+            std::cout<<' ';
+        }
+        std::cout<<std::endl;
+        std::cout<<std::endl;
     }
 }
 
@@ -1182,7 +1046,8 @@ void ActionDebuger::closeEvent(QCloseEvent *event)
 {
     QMessageBox::StandardButton reply = QMessageBox::question(this, "Warning", "write action data into file?",
                                         QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-
+    auto &pos_map_ = action_eng_->get_pos_map();
+    auto &act_map_ = action_eng_->get_act_map();
     if (reply == QMessageBox::StandardButton::Yes)
     {
         save(act_file_, act_map_, pos_map_);

@@ -7,6 +7,7 @@
 #include <robot/robot.hpp>
 #include <ros/ros.h>
 #include <common/AddAngles.h>
+#include <motion/ActionEngine.hpp>
 
 #define SLIDER_RANGE 1000
 
@@ -136,6 +137,7 @@ public slots:
     void procButtonDeleteAction();
     void procButtonSaveAction();
 
+    void procButtonWebots();
     void procButtonRunPos();
     void updateSlider(int id);
     void procTimer();
@@ -153,13 +155,6 @@ private:
     float get_deg_from_pose(const float &ps);
     bool turn_joint();
 
-    std::vector< std::map<robot::RobotMotion, robot::RobotPose> > 
-            get_poses(std::map<robot::RobotMotion, robot::RobotPose> &pos1,
-            std::map<robot::RobotMotion, robot::RobotPose> &pos2, int act_time);
-
-    bool get_degs(robot::PoseMap &act_pose, common::BodyAngles &bAngles);
-
-
     robot::RobotMotion motion_, last_motion;
     std::map<robot::RobotMotion, robot::RobotPose> pose_map_;
     std::map<int, float> joint_degs_;
@@ -172,7 +167,7 @@ private:
     QListWidget *m_pPosListWidget, *m_pActListWidget, *m_pJDListWidget1, *m_pJDListWidget2;
     QPushButton *mButtonInsertPosFront, *mButtonInsertPosBack, *mButtonDeletePos, *mButtonSavePos;
     QPushButton *mButtonAddAction, *mButtonDeleteAction, *mButtonSaveAction;
-    QPushButton *btnrunPos;
+    QPushButton *btnrunPos, *btnOutWebots;
     QRadioButton *head, *body, *leftArm, *rightArm, *leftFoot, *rightFoot;
     QButtonGroup *motionBtnGroup;
     QGroupBox *mSliderGroup;
@@ -180,8 +175,7 @@ private:
     std::vector<CKSlider *> mKsliders;
     std::map<std::string, CJointDegWidget *> mJDInfos;
     std::shared_ptr<robot::Robot> mRbt;
-    robot::ActMap act_map_;
-    robot::PosMap pos_map_;
+    std::shared_ptr<ActionEngine> action_eng_;
     std::string act_file_;
     ros::NodeHandle &node;
 };

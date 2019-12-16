@@ -5,7 +5,6 @@
 using namespace std;
 using namespace robot;
 
-
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "action_monitor");

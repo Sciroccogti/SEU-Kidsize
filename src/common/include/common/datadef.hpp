@@ -2,7 +2,7 @@
 #define __DATADEF_HPP
 
 #include <common/PlayerInfo.h>
-
+#include <eigen3/Eigen/Dense>
 
 struct CameraParams
 {
@@ -24,6 +24,14 @@ struct DetObject
     {
         return prob < obj.prob;
     }
+};
+
+struct ObjectFilter
+{
+    float min_prob;
+    Eigen::Vector2f r_range;
+    Eigen::Vector2i w_range;
+    Eigen::Vector2i h_range;
 };
 
 #define TC_COMM_PORT 6868

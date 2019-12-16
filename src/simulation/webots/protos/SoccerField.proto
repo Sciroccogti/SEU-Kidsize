@@ -23,7 +23,7 @@ PROTO SoccerField [
         appearance DEF GREEN_APPEARANCE PBRAppearance {
           baseColorMap ImageTexture {
             url [
-              "textures/field_quarter_base_color.jpg"
+              "textures/field_quarter_base_color0.jpg"
             ]
             repeatT FALSE
             repeatS FALSE
@@ -82,6 +82,30 @@ PROTO SoccerField [
         name "goal 2"
         postRadius IS postRadius
         frameColor IS frame2Color
+      }
+      GoalPost {
+        translation 4.55 0 -0.8
+        name "goal 1l"
+        postRadius 0.06
+        frameColor 1 0 0
+      }
+      GoalPost {
+        translation 4.55 0 0.8
+        name "goal 1r"
+        postRadius 0.06
+        frameColor 1 0 0
+      }
+      GoalPost {
+        translation -4.55 0 -0.8
+        name "goal 2l"
+        postRadius 0.06
+        frameColor 1 0 0
+      }
+      GoalPost {
+        translation -4.55 0 0.8
+        name "goal 2r"
+        postRadius 0.06
+        frameColor 1 0 0
       }
     ]
     name IS name

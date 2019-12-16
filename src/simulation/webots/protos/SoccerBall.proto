@@ -14,6 +14,7 @@ PROTO SoccerBall [
   field SFFloat    linearDamping   0.17           # Defines the linear damping of the ball.
   field SFFloat    angularDamping  0.33           # Defines the angular damping of the ball.
   field SFString   contactMaterial "default"      # Is `Solid.contactMaterial`.
+  field MFString   faceUrl           "textures/mixball.jpg"
 ]
 {
   Solid {
@@ -25,9 +26,7 @@ PROTO SoccerBall [
           material Material {
           }
           texture ImageTexture {
-            url [
-              "textures/mixball.jpg"
-            ]
+            url IS faceUrl
           }
         }
         geometry Sphere {

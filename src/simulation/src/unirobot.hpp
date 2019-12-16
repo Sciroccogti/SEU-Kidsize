@@ -15,6 +15,7 @@
 #include <common/ImuData.h>
 #include <common/BodyTask.h>
 #include <common/HeadTask.h>
+#include <common/LedTask.h>
 #include <mutex>
 #include "walk/IKWalk.hpp"
 
@@ -37,15 +38,18 @@ private:
     ros::Publisher mHeadPublisher;
     ros::Subscriber mHeadTaskSubscriber;
     ros::Subscriber mBodyTaskSubscriber;
+    ros::Subscriber mLedTaskSubscriber;
 
     bool CameraInfoService(common::CameraInfo::Request &req, common::CameraInfo::Response &res);
     void PublishImage();
     void HeadTaskUpdate(const common::HeadTask::ConstPtr &p);
     void BodyTaskUpdate(const common::BodyTask::ConstPtr &p);
+    void LedTaskUpdate(const common::LedTask::ConstPtr &p);
 
     mutable std::mutex mHeadMtx, mBodyMtx;
     common::BodyTask mBodytask;
     common::HeadTask mHeadtask;
+    common::LedTask mLedtask;
 
     std::vector<common::BodyAngles> mBodyAngles;
     Rhoban::IKWalkParameters mWalkParams;

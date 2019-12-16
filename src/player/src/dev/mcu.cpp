@@ -4,8 +4,8 @@
 using namespace std;
 
 const string mcu_dev_name = "/dev/ttyUSB0";
-const uint32_t mcu_baudrate = 1000000;
-const uint32_t mcu_timeout = 22;
+const uint32_t mcu_baudrate = 576000;
+const uint32_t mcu_timeout = 10;
 
 const uint16_t REQ_PKT_LEN = 16;
 const uint16_t LEAST_PKT_LEN = 7;

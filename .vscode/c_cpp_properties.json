@@ -13,6 +13,7 @@
                 "${workspaceFolder}/devel/include/**",
                 "${workspaceFolder}/src/common/include/**",
                 "${workspaceFolder}/src/config/include/**",
+                "${workspaceFolder}/src/motion/include/**",
                 "${workspaceFolder}/src/libraries/robot/include/**",
                 "${workspaceFolder}/src/libraries/seumath/include/**",
                 "${workspaceFolder}/src/libraries/seuimage/include/**",

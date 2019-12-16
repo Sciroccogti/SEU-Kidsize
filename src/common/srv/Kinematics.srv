@@ -8,4 +8,4 @@ int32 RIGHT_FOOT = 4
 int32 LEFT_FOOT = 5
 ---
 bool success
-float32[6] degs
+float64[] degs

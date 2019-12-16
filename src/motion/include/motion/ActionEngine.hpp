@@ -9,8 +9,18 @@
 class ActionEngine
 {
 public:
-    ActionEngine();
-    bool runAction(std::string act);
+    ActionEngine(std::string act_file, std::shared_ptr<robot::Robot> rbt=nullptr);
+    bool runAction(std::string act, int idx=-1);
+
+    robot::ActMap& get_act_map()
+    {
+        return act_map_;
+    }
+
+    robot::PosMap& get_pos_map()
+    {
+        return pos_map_;
+    }
 
 private:
     std::vector< std::map<robot::RobotMotion, robot::RobotPose> > 
@@ -22,6 +32,7 @@ private:
 private:
     robot::ActMap act_map_;
     robot::PosMap pos_map_;
+    std::shared_ptr<robot::Robot> rbt_;
 };
 
 #endif

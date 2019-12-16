@@ -7,25 +7,23 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 #include <ros/ros.h>
-#include <sensor_msgs/CompressedImage.h>
+#include <image_transport/image_transport.h>
+#include <sensor_msgs/Image.h>
 
 class ImageMonitor: public QMainWindow
 {
     Q_OBJECT
 public:
     ImageMonitor(ros::NodeHandle &node);
-    void ImageUpdate(const sensor_msgs::CompressedImage::ConstPtr &image);
+    void ImageUpdate(const sensor_msgs::Image::ConstPtr &image);
 public slots:
-    void procSlider(int v);
     void procShot(QRect rect);
-    void procImageBox(int state);
+    void procSendTypeBox(int idx);
     void procTimer();
 
 private:
     ImageLabel *imageLab;
-    QLabel *yawLab, *pitchLab, *netLab;
-    QSlider *pitchSlider, *yawSlider;
-    QCheckBox *imageSrcBox;
+    QComboBox *sendTypeBox;
     QCheckBox *imageSaveBox;
     QTimer *timer;
 
@@ -34,8 +32,7 @@ private:
     int height_;
     unsigned int image_count_;
     ros::NodeHandle &node;
-    ros::Publisher headPub;
-    ros::Subscriber imageSub;
+    image_transport::Subscriber imageSub;
 };
 
 #endif

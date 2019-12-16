@@ -3,7 +3,5 @@
   <!-- start update -->
   <include file="$(find start)/launch/update_params.launch" />
   <!-- start camera -->
-  <node pkg="vision" type="camera" name="camera" output="screen"/>
-  <!-- start image_process -->
-  <node pkg="vision" type="image_process" name="imgproc" output="screen"/>
+  <node pkg="vision" type="vision" name="vision" output="screen"/>
 </launch>
