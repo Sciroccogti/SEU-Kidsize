@@ -27,14 +27,12 @@ add_message_files(
   LedTask.msg
   ObjInfo.msg
   ImageResult.msg
+  GcInfo.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  QueueSize.srv
-  BoneLength.srv
-  Kinematics.srv
   GetAngles.srv
   AddAngles.srv
   SetInt.srv

@@ -1,7 +1,6 @@
 #include "ScanEngine.hpp"
 #include <seumath/math.hpp>
 #include <ros/ros.h>
-#include <common/AddAngles.h>
 #include <common/HeadAngles.h>
 
 using namespace std;
@@ -38,18 +37,20 @@ ScanEngine::ScanEngine(): pitch_range_(0.0, 70.0),
     }
 }
 
-void ScanEngine::runScan(const common::HeadTask &task)
+std::vector<common::HeadAngles> ScanEngine::runScan(const common::HeadTask &task)
 {
-    common::AddAngles addSrv;
-    addSrv.request.part = "head";
-    common::HeadAngles &hAngles = addSrv.request.head;
+    std::vector<common::HeadAngles> res;
+    common::HeadAngles hAngles;
     if(task.mode == common::HeadTask::ModeScanBall)
     {
         for(int i=0; i<ball_search_table_.size(); i++)
         {
-            hAngles.pitch = ball_search_table_[i][0];
-            hAngles.yaw = ball_search_table_[i][1];
-            ros::service::call("/addangles", addSrv);
+            for(int j=0; j<50; j++)
+            {
+                hAngles.pitch = ball_search_table_[i][0];
+                hAngles.yaw = ball_search_table_[i][1];
+                res.push_back(hAngles);
+            }
         }
     }
     else if(task.mode == common::HeadTask::ModeScanPost)
@@ -61,14 +62,15 @@ void ScanEngine::runScan(const common::HeadTask &task)
                     ya+=pow(-1, i+1)*search_post_div)
             {
                 hAngles.yaw = ya;
-                ros::service::call("/addangles", addSrv);
+                res.push_back(hAngles);
             }
         }
     }
-    else if(task.mode == common::HeadTask::ModeLookAt)
+    else
     {
         hAngles.pitch = task.pitch;
         hAngles.yaw = task.yaw;
-        ros::service::call("/addangles", addSrv);
+        res.push_back(hAngles);
     }
+    return res;
 }

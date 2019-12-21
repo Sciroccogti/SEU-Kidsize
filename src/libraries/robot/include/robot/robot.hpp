@@ -209,6 +209,9 @@ public:
   }
 
   int joint_count() { return joint_map_.size(); }
+  int joint_start_id() {
+    return start_id_;
+  }
 
 public:
   double hip_distance, thigh_length, shank_length, foot_length;
@@ -220,6 +223,7 @@ private:
   BonePtr main_bone_;
   JointMap joint_map_;
   BoneMap bone_map_;
+  int start_id_;
 };
 } // namespace robot
 

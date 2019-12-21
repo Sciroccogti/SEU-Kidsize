@@ -131,7 +131,6 @@ void Run(const ros::TimerEvent& event)
     {   
         cv::Mat bgr;
         cv::cvtColor(srcMat, bgr, CV_RGB2BGR);
-        
         if(send_type>1)
         {
             cv::circle(bgr, ball, 5, cv::Scalar(0, 0, 255), 2);

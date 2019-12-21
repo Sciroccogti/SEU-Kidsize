@@ -5,7 +5,6 @@
 #include <thread>
 #include <mutex>
 #include <memory>
-#include "common.hpp"
 #include "serial.h"
 
 #define MAX_MCU_BUFF_LEN 256

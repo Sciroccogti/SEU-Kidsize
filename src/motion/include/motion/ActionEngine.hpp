@@ -9,8 +9,8 @@
 class ActionEngine
 {
 public:
-    ActionEngine(std::string act_file, std::shared_ptr<robot::Robot> rbt=nullptr);
-    bool runAction(std::string act, int idx=-1);
+    ActionEngine(std::string act_file, std::shared_ptr<robot::Robot> rbt);
+    std::vector<common::BodyAngles> runAction(std::string act, int idx=100);
 
     robot::ActMap& get_act_map()
     {

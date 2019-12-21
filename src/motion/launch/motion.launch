@@ -2,6 +2,6 @@
 <launch>
   <!-- start update -->
   <include file="$(find start)/launch/update_params.launch" />
-  <!-- start image_process -->
-  <node pkg="vision" type="image_process" name="imgproc" output="screen"/>
+  <!-- start motion -->
+  <node pkg="motion" type="motion" name="motion" output="screen"/>
 </launch>

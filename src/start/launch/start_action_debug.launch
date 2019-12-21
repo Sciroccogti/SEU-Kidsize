@@ -2,10 +2,10 @@
 <launch>
   <!-- start update -->
   <include file="$(find start)/launch/update_params.launch" />
-  <!-- start player -->
-  <node pkg="player" type="player" name="player" output="screen"/>
+  <!-- start simulation -->
+  <include file="$(find simulation)/launch/simulation.launch" />
   <!-- start motion -->
   <node pkg="motion" type="motion" name="motion" output="screen"/>
-  <!-- start image_process -->
-  <node pkg="vision" type="image_process" name="imgproc" output="screen"/>
+  <!-- start debuger -->
+  <node pkg="action" type="action_debuger" name="action_debuger" output="screen"/>
 </launch>

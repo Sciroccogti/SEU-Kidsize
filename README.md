@@ -17,15 +17,17 @@
     + paramiko  
 
 - 仿真环境  
-    + Webots  
+    + Webots(安装位置必须是/usr/local/webots)  
+    + 需要在～/.bashrc中添加： export WEBOTS_HOME=/usr/local/webots  
 
 
 ## 开发工具   
-+ VS Code (插件: C/C++, python, ROS, CMake)  
++ VS Code (插件: C/C++, Python, ROS, CMake)  
 + astyle (代码格式化工具)  
 
 ## 目录说明  
 + common: 数据结构定义  
++ communication: 比赛控制器通信  
 + config: 配置文件存放及解析  
 + libraries: 自己实现的库  
     - seuimage: 图像处理相关  

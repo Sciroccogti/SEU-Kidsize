@@ -6,28 +6,18 @@
 #include <cmath>
 #include <fstream>
 #include <ros/ros.h>
-#include <common/BoneLength.h>
 #include <common/BodyAngles.h>
-#include <common/AddAngles.h>
 #include <config/basic_parser.hpp>
 
 using namespace Eigen;
 using namespace seumath;
 using namespace std;
 
-WalkEngine::WalkEngine()
+WalkEngine::WalkEngine(std::string wkfile, std::shared_ptr<robot::Robot> rbt): rbt_(rbt)
 {
-    std::string cfgfile;
-    try{
-        ros::param::get("walk_file", cfgfile);
-    }
-    catch(ros::InvalidNameException &e){
-        ROS_ERROR("%s", e.what());
-        return;
-    }
-    ROS_INFO("walk file: %s", cfgfile.c_str());
+    ROS_INFO("walk_file: %s", wkfile.c_str());
     common::bpt::ptree pt;
-    bool ret = common::parse_file(cfgfile, pt);
+    bool ret = common::parse_file(wkfile, pt);
     if(!ret) return;
     XOffset_ = pt.get<double>("XOffset");
     YOffset_ = pt.get<double>("YOffset");
@@ -40,23 +30,10 @@ WalkEngine::WalkEngine()
      * Model leg typical length between
      * each rotation axis
      */
-    common::BoneLength bsrv;
-    bsrv.request.name = "rthigh";
-    ros::service::call("/bonelength", bsrv);
-    params_.distHipToKnee = bsrv.response.length;
-    bsrv.request.name = "rshank";
-    ros::service::call("/bonelength", bsrv);
-    params_.distKneeToAnkle = bsrv.response.length;
-    bsrv.request.name = "rfoot1";
-    ros::service::call("/bonelength", bsrv);
-    params_.distAnkleToGround = bsrv.response.length;
-    /**
-     * Distance between the two feet in lateral
-     * axis while in zero position
-     */
-    bsrv.request.name = "hip";
-    ros::service::call("/bonelength", bsrv);
-    params_.distFeetLateral = bsrv.response.length;
+    params_.distHipToKnee = rbt_->get_bone("rthigh")->length;
+    params_.distKneeToAnkle = rbt_->get_bone("rshank")->length;
+    params_.distAnkleToGround = rbt_->get_bone("rfoot1")->length;
+    params_.distFeetLateral = rbt_->get_bone("hip")->length;
     /**
      * Complete (two legs) walk cycle frequency
      * in Hertz
@@ -229,7 +206,7 @@ WalkEngine::WalkEngine()
 
 }
 
-void WalkEngine::runWalk(Eigen::Vector3d p, int steps, double& phase, double& time)
+std::vector<common::BodyAngles> WalkEngine::runWalk(Eigen::Vector3d p, int steps, double& phase)
 {
     params_.stepGain = p.x();
     params_.lateralGain = p.y();
@@ -240,22 +217,18 @@ void WalkEngine::runWalk(Eigen::Vector3d p, int steps, double& phase, double& ti
     bound(xrange_[0], xrange_[1], params_.stepGain);
     bound(yrange_[0], yrange_[1], params_.lateralGain);
     bound(drange_[0], drange_[1], params_.turnGain);
-    params_.stepGain += XOffset_;
-    params_.lateralGain += YOffset_;
-    params_.turnGain = deg2rad(params_.turnGain)-deg2rad(DOffset_);
+    params_.turnGain = deg2rad(params_.turnGain);
 
-    common::AddAngles addSrv;
-    addSrv.request.part = "body";
-    common::BodyAngles &bAngles = addSrv.request.body;
+    std::vector<common::BodyAngles> ret;
+
     Rhoban::IKWalkOutputs outputs;
     std::map<int, float> jdegs;
     for (double t=0.0;t<=steps*time_length_;t+=1.0/engine_frequency_) 
     {
-        time += 1.0/engine_frequency_;
         bool success = Rhoban::IKWalk::walk(params_, 1.0/engine_frequency_, phase, outputs);
         if (success)  
         {
-    
+            common::BodyAngles bAngles;
             bAngles.left_hip_yaw = rad2deg(outputs.left_hip_yaw);
             bAngles.left_hip_roll = rad2deg(outputs.left_hip_roll);
             bAngles.left_hip_pitch = rad2deg(outputs.left_hip_pitch);
@@ -274,10 +247,11 @@ void WalkEngine::runWalk(Eigen::Vector3d p, int steps, double& phase, double& ti
             bAngles.left_elbow = -170;
             bAngles.right_shoulder = 0;
             bAngles.right_elbow = 170;
-            ros::service::call("/addangles", addSrv);
+            ret.push_back(bAngles);
         }
         else{
             ROS_WARN("kinematics failed");
         }
     }
+    return ret;
 }

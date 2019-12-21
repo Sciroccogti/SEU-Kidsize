@@ -1007,7 +1007,9 @@ void ActionDebuger::procButtonRunPos()
         m_pPosListWidget->itemWidget(m_pPosListWidget->currentItem());
     int id = pCur_PosWidget->m_id->text().toInt();
     string act_name = m_pActListWidget->currentItem()->text().toStdString();
-    action_eng_->runAction(act_name, id);
+    common::AddAngles add;
+    add.request.angles = action_eng_->runAction(act_name, id);
+    ros::service::call("/addangles", add);
 }
 
 void ActionDebuger::procButtonWebots()

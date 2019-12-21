@@ -1,37 +1,36 @@
-#include <common/AddAngles.h>
-#include <common/Kinematics.h>
 #include <motion/ActionEngine.hpp>
 #include <ros/ros.h>
 
 using namespace robot;
 using namespace seumath;
 
-ActionEngine::ActionEngine(std::string act_file,
-                           std::shared_ptr<robot::Robot> rbt)
-    : rbt_(rbt) {
+ActionEngine::ActionEngine(std::string act_file, std::shared_ptr<robot::Robot> rbt) : rbt_(rbt)
+{
   ROS_INFO("action_file: %s", act_file.c_str());
   parse(act_file, act_map_, pos_map_);
 }
 
-bool ActionEngine::runAction(std::string act, int idx) {
+std::vector<common::BodyAngles> ActionEngine::runAction(std::string act, int idx)
+{
+  std::vector<common::BodyAngles> res;
   auto iter = act_map_.find(act);
-  if (iter == act_map_.end()) {
+  if (iter == act_map_.end())
+  {
     ROS_ERROR("can not find act: %s", act.c_str());
-    return false;
+    return res;
   }
-  common::AddAngles addSrv;
-  addSrv.request.part = "body";
-  common::BodyAngles &bAngles = addSrv.request.body;
+  common::BodyAngles bAngles;
   std::vector<PoseMap> poses_temp;
   std::vector<int> pos_times_temp;
   int k = 0;
   std::vector<robot::RobotOnePos> poses = iter->second.poses;
-  for (int i = 0; i < poses.size(); i++) {
+  for (int i = 0; i < poses.size(); i++)
+  {
     pos_times_temp.push_back(poses[i].act_time);
     poses_temp.push_back(pos_map_[poses[i].pos_name].pose_info);
   }
   if (poses_temp.empty())
-    return false;
+    return res;
   int act_time;
   std::map<int, float> one_pos_deg;
   std::map<std::string, float> jdegs;
@@ -39,39 +38,37 @@ bool ActionEngine::runAction(std::string act, int idx) {
   act_time = pos_times_temp[0];
   pos1 = poses_temp[0];
   bool ret = get_degs(pos1, bAngles);
-  if (!ret)
-    return false;
-  ros::service::call("/addangles", addSrv);
-  if (poses_temp.size() < 2)
-    return true;
+  if (ret)
+    res.push_back(bAngles);
   k++;
-  for (int i = 1; i < poses_temp.size(); i++) {
+  for (int i = 1; i < poses_temp.size() && k < idx; i++)
+  {
     pos1 = poses_temp[i - 1];
     pos2 = poses_temp[i];
     std::vector<std::map<robot::RobotMotion, robot::RobotPose>> act_poses;
     act_poses = get_poses(pos1, pos2, pos_times_temp[i]);
     if (i == poses_temp.size() - 1)
       act_poses.push_back(pos2);
-
-    for (auto act_pose : act_poses) {
+    for (auto act_pose : act_poses)
+    {
       ret = get_degs(act_pose, bAngles);
-      if (!ret)
-        return false;
-      ros::service::call("/addangles", addSrv);
+      if (ret)
+        res.push_back(bAngles);
     }
     k++;
-    if (k == idx)
-      break;
   }
-  return true;
+  return res;
 }
 
 bool ActionEngine::get_degs(robot::PoseMap &act_pose,
-                            common::BodyAngles &bAngles) {
+                            common::BodyAngles &bAngles)
+{
   TransformMatrix body_mat, leftfoot_mat, rightfoot_mat;
   Eigen::Vector3d lefthand, righthand;
-  common::Kinematics ik;
-  if (rbt_.get()) {
+
+  std::vector<double> degs(6);
+  if (rbt_.get())
+  {
     body_mat = rbt_->get_body_mat_from_pose(act_pose[MOTION_BODY]);
     leftfoot_mat =
         rbt_->get_foot_mat_from_pose(act_pose[MOTION_LEFT_FOOT], true);
@@ -82,92 +79,56 @@ bool ActionEngine::get_degs(robot::PoseMap &act_pose,
     lefthand[0] = act_pose[MOTION_LEFT_HAND].x;
     lefthand[2] = act_pose[MOTION_LEFT_HAND].z;
   }
-  if (rbt_.get() == nullptr) {
-    PoseToTrans(act_pose[MOTION_BODY], ik.request.body);
-    PoseToTrans(act_pose[MOTION_LEFT_FOOT], ik.request.end);
-    ik.request.part = ik.request.LEFT_FOOT;
-    ros::service::call("/kinematics", ik);
-    if (!ik.response.success) {
-      ROS_WARN("left foot kinematics failed");
-      return false;
-    }
-  } else {
-    ik.response.degs.resize(6);
-    if (!rbt_->leg_inverse_kinematics(body_mat, leftfoot_mat, ik.response.degs,
-                                      true)) {
-      ROS_WARN("left foot kinematics failed");
-      return false;
-    }
+
+  if (!rbt_->leg_inverse_kinematics(body_mat, leftfoot_mat, degs, true))
+  {
+    ROS_WARN("left foot kinematics failed");
+    return false;
   }
-  bAngles.left_hip_yaw = rad2deg(ik.response.degs[0]);
-  bAngles.left_hip_roll = rad2deg(ik.response.degs[1]);
-  bAngles.left_hip_pitch = rad2deg(ik.response.degs[2]);
-  bAngles.left_knee = rad2deg(ik.response.degs[3]);
-  bAngles.left_ankle_pitch = rad2deg(ik.response.degs[4]);
-  bAngles.left_ankle_roll = rad2deg(ik.response.degs[5]);
-  if (rbt_.get() == nullptr) {
-    PoseToTrans(act_pose[MOTION_RIGHT_FOOT], ik.request.end);
-    ik.request.part = ik.request.RIGHT_FOOT;
-    ros::service::call("/kinematics", ik);
-    if (!ik.response.success) {
-      ROS_WARN("right foot kinematics failed");
-      return false;
-    }
-  } else {
-    ik.response.degs.resize(6);
-    if (!rbt_->leg_inverse_kinematics(body_mat, rightfoot_mat, ik.response.degs,
-                                      false)) {
-      ROS_WARN("right foot kinematics failed");
-      return false;
-    }
+ 
+  bAngles.left_hip_yaw = rad2deg(degs[0]);
+  bAngles.left_hip_roll = rad2deg(degs[1]);
+  bAngles.left_hip_pitch = rad2deg(degs[2]);
+  bAngles.left_knee = rad2deg(degs[3]);
+  bAngles.left_ankle_pitch = rad2deg(degs[4]);
+  bAngles.left_ankle_roll = rad2deg(degs[5]);
+
+  if (!rbt_->leg_inverse_kinematics(body_mat, rightfoot_mat, degs, false))
+  {
+    ROS_WARN("right foot kinematics failed");
+    return false;
   }
-  bAngles.right_hip_yaw = rad2deg(ik.response.degs[0]);
-  bAngles.right_hip_roll = rad2deg(ik.response.degs[1]);
-  bAngles.right_hip_pitch = rad2deg(ik.response.degs[2]);
-  bAngles.right_knee = rad2deg(ik.response.degs[3]);
-  bAngles.right_ankle_pitch = rad2deg(ik.response.degs[4]);
-  bAngles.right_ankle_roll = rad2deg(ik.response.degs[5]);
-  if (rbt_.get() == nullptr) {
-    PoseToTrans(act_pose[MOTION_LEFT_HAND], ik.request.end);
-    ik.request.part = ik.request.LEFT_HAND;
-    ros::service::call("/kinematics", ik);
-    if (!ik.response.success) {
-      ROS_WARN("left hand kinematics failed");
-      return false;
-    }
-    bAngles.left_shoulder = rad2deg(ik.response.degs[0]);
-    bAngles.left_elbow = -rad2deg(ik.response.degs[1]);
-    PoseToTrans(act_pose[MOTION_RIGHT_HAND], ik.request.end);
-    ik.request.part = ik.request.RIGHT_HAND;
-    ros::service::call("/kinematics", ik);
-    if (!ik.response.success) {
-      ROS_WARN("right hand kinematics failed");
-      return false;
-    }
-    bAngles.right_shoulder = rad2deg(ik.response.degs[0]);
-    bAngles.right_elbow = rad2deg(ik.response.degs[1]);
-  } else {
-    ik.response.degs.resize(6);
-    if (!rbt_->arm_inverse_kinematics(lefthand, ik.response.degs)) {
-      ROS_WARN("left hand kinematics failed");
-      return false;
-    }
-    bAngles.left_shoulder = rad2deg(ik.response.degs[0]);
-    bAngles.left_elbow = -rad2deg(ik.response.degs[1]);
-    if (!rbt_->arm_inverse_kinematics(righthand, ik.response.degs)) {
-      ROS_WARN("right hand kinematics failed");
-      return false;
-    }
-    bAngles.right_shoulder = rad2deg(ik.response.degs[0]);
-    bAngles.right_elbow = rad2deg(ik.response.degs[1]);
+ 
+  bAngles.right_hip_yaw = rad2deg(degs[0]);
+  bAngles.right_hip_roll = rad2deg(degs[1]);
+  bAngles.right_hip_pitch = rad2deg(degs[2]);
+  bAngles.right_knee = rad2deg(degs[3]);
+  bAngles.right_ankle_pitch = rad2deg(degs[4]);
+  bAngles.right_ankle_roll = rad2deg(degs[5]);
+
+  if (!rbt_->arm_inverse_kinematics(lefthand, degs))
+  {
+    ROS_WARN("left hand kinematics failed");
+    return false;
   }
+  bAngles.left_shoulder = rad2deg(degs[0]);
+  bAngles.left_elbow = -rad2deg(degs[1]);
+  if (!rbt_->arm_inverse_kinematics(righthand, degs))
+  {
+    ROS_WARN("right hand kinematics failed");
+    return false;
+  }
+  bAngles.right_shoulder = rad2deg(degs[0]);
+  bAngles.right_elbow = rad2deg(degs[1]);
+  
   return true;
 }
 
 std::vector<std::map<robot::RobotMotion, robot::RobotPose>>
 ActionEngine::get_poses(std::map<robot::RobotMotion, robot::RobotPose> &pos1,
                         std::map<robot::RobotMotion, robot::RobotPose> &pos2,
-                        int act_time) {
+                        int act_time)
+{
   Eigen::Vector3d poseb1(pos1[robot::MOTION_BODY].x, pos1[robot::MOTION_BODY].y,
                          pos1[robot::MOTION_BODY].z);
   Eigen::Vector3d poseb2(pos2[robot::MOTION_BODY].x, pos2[robot::MOTION_BODY].y,
@@ -243,7 +204,8 @@ ActionEngine::get_poses(std::map<robot::RobotMotion, robot::RobotPose> &pos1,
   double dlhx = dposelh.x() / count, dlhz = dposelh.z() / count;
   double drhx = dposerh.x() / count, drhz = dposerh.z() / count;
   std::vector<std::map<robot::RobotMotion, robot::RobotPose>> act_poses;
-  for (int i = 0; i < count; i++) {
+  for (int i = 0; i < count; i++)
+  {
     std::map<robot::RobotMotion, robot::RobotPose> temp_pose_map;
     robot::RobotPose temp_pose;
     temp_pose.x = poselh1.x() + i * dlhx;

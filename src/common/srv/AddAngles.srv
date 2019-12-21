@@ -1,5 +1,3 @@
-string part
-HeadAngles head
-BodyAngles body
+BodyAngles[] angles
 ---
 bool success

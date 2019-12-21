@@ -1,14 +1,21 @@
+#include <common/BodyAngles.h>
+#include <common/HeadAngles.h>
+#include <common/ImuData.h>
+#include <common/GetAngles.h>
+#include <common/common.hpp>
+#include <seumath/math.hpp>
+#include <bits/stdc++.h>
 #include <ros/ros.h>
-#include <ros/package.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>  
-#include <stdlib.h>  
-#include <stdio.h>  
-#include <string.h>
-#include "unirobot.hpp"
+#include "SimRobot.hpp"
 
 using namespace std;
+using namespace common;
+using namespace seumath;
+using namespace Eigen;
+
+
+std::shared_ptr<SimRobot> player;
+uint32_t start_clock = 0;
 
 int main(int argc, char **argv)
 {
@@ -41,8 +48,19 @@ int main(int argc, char **argv)
       usleep(1000000);
     }
     if(!ok) return 0;
-    std::string actpath = ros::package::getPath("simulation")+"/conf/actions";
-    shared_ptr<UniRobot> robot = make_shared<UniRobot>(&node, "maxwell", actpath);
-    robot->run();
+    ros::service::waitForService("/getangles");
+    player = std::make_shared<SimRobot>(&node);
+    start_clock = get_clock();
+    int ret = 0;
+    while (ros::ok() && ret >= 0)
+    {
+        GetAngles getsrv;
+        ros::service::call("/getangles", getsrv);
+        player->mAngles = getsrv.response.body;
+        player->mHAngles = getsrv.response.head;
+        ret = player->myStep();
+        ros::spinOnce();
+    }
     return 0;
 }
+

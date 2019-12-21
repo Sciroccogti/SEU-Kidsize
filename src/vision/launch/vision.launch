@@ -2,6 +2,6 @@
 <launch>
   <!-- start update -->
   <include file="$(find start)/launch/update_params.launch" />
-  <!-- start camera -->
+  <!-- start vision -->
   <node pkg="vision" type="vision" name="vision" output="screen"/>
 </launch>
