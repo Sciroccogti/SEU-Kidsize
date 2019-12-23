@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     resultPublisher = node.advertise<common::ImageResult>("/result/vision/imgproc", 1);
     ros::ServiceServer typeServer = node.advertiseService("/setting/sendtype", SendTypeService);
     camera->Run();
-    ros::Timer timer = node.createTimer(ros::Duration(0.1), Run);
+    ros::Timer timer = node.createTimer(ros::Duration(0.05), Run);
     ros::spin();
     camera->Close();
     return 0;

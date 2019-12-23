@@ -13,7 +13,6 @@ using namespace common;
 using namespace seumath;
 using namespace Eigen;
 
-
 std::shared_ptr<SimRobot> player;
 uint32_t start_clock = 0;
 

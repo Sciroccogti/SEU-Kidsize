@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(communication)
+project(gamectrl)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -103,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES communication
+#  LIBRARIES gamectrl
 #  CATKIN_DEPENDS common roscpp
 #  DEPENDS system_lib
 )
@@ -121,7 +121,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/communication.cpp
+#   src/${PROJECT_NAME}/gamectrl.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -196,7 +196,7 @@ target_link_libraries(gamectrl
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_communication.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_gamectrl.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

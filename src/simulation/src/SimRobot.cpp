@@ -28,16 +28,24 @@ SimRobot::SimRobot(ros::NodeHandle *node) : Robot()
   mLEDs[0] = getLED("Led0");
   mLEDs[1] = getLED("Led1");
 
-  fall_type = ImuData::FALL_NONE;
+  fallType = ImuData::FALL_NONE;
   mInitYaw = 0.0;
-  mYaw = 0.0;
-
+  imuReset = true;
   mHAngles.yaw = 0.0;
   mHAngles.pitch = 0.0;
+  ledTask.led1 = 1;
+  ledTask.led2 = 1;
   mNode = node;
   mImagePublisher = mNode->advertise<sensor_msgs::Image>("/sensor/image", 1);
   mHeadPublisher = mNode->advertise<common::HeadAngles>("/sensor/head", 1);
   mImuPublisher = mNode->advertise<common::ImuData>("/sensor/imu", 1);
+  imuRstService = mNode->advertiseService("/imurst", &SimRobot::ResetImuService, this);
+  mLedSubscriber = mNode->subscribe("/task/led", 1, &SimRobot::LedTaskUpdate, this);
+}
+
+void SimRobot::LedTaskUpdate(const common::LedTask::ConstPtr &p)
+{
+  ledTask = *p;
 }
 
 void SimRobot::PublishImage()
@@ -68,12 +76,19 @@ void SimRobot::PublishImage()
   }
 }
 
+bool SimRobot::ResetImuService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+  imuReset = true;
+}
+
 int SimRobot::myStep()
 {
   common::HeadAngles head;
   head.yaw = seumath::rad2deg(mHAngles.yaw);
   head.pitch = seumath::rad2deg(mHAngles.pitch);
   mHeadPublisher.publish(head);
+  mLEDs[0]->set(0xff0000*ledTask.led1);
+  mLEDs[1]->set(0xff0000*ledTask.led2);
   setPositions();
   checkFall();
   totalTime += mTimeStep;
@@ -86,25 +101,30 @@ void SimRobot::checkFall()
 {
   const double *rpy = mIMU->getRollPitchYaw();
   if (rpy[1] > fall_thresh)
-    fall_type = ImuData::FALL_BACKWARD;
+    fallType = ImuData::FALL_BACKWARD;
   else if (rpy[1] < -fall_thresh)
-    fall_type = ImuData::FALL_FORWARD;
+    fallType = ImuData::FALL_FORWARD;
   else if (rpy[0] < -fall_thresh)
-    fall_type = ImuData::FALL_LEFT;
+    fallType = ImuData::FALL_LEFT;
   else if (rpy[0] > fall_thresh)
-    fall_type = ImuData::FALL_RIGHT;
+    fallType = ImuData::FALL_RIGHT;
   else
-    fall_type = ImuData::FALL_NONE;
-  mYaw = seumath::normalizeRad<double>(rpy[2] - mInitYaw);
+    fallType = ImuData::FALL_NONE;
   ImuData imu;
-  imu.yaw = seumath::rad2deg(mYaw);
-  imu.pitch = rpy[1];
-  imu.roll = rpy[0];
-  imu.fall = fall_type;
+  imu.yaw = seumath::rad2deg(rpy[2]);
+  imu.pitch = seumath::rad2deg(rpy[1]);
+  imu.roll = seumath::rad2deg(rpy[0]);
+  imu.fall = fallType;
   imu.stamp = ros::Time::now().toNSec();
+  if(imuReset)
+  {
+    imuReset = false;
+    mInitYaw = imu.yaw;
+  }
+  imu.yaw = seumath::normalizeRad<double>(imu.yaw - mInitYaw);
   mImuPublisher.publish(imu);
   // printf("roll=%f, pitch=%f, yaw=%f\n", rpy[0], rpy[1], rpy[2]);
-  // printf("%d\n", fall_type);
+  // printf("%d\n", fallType);
 }
 
 void SimRobot::wait(int ms)

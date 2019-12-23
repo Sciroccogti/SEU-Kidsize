@@ -11,6 +11,8 @@
 #include <sensor_msgs/Image.h>
 #include <common/BodyAngles.h>
 #include <common/HeadAngles.h>
+#include <common/LedTask.h>
+#include <std_srvs/Empty.h>
 #include <common/ImuData.h>
 
 
@@ -31,7 +33,10 @@ private:
     ros::Publisher mImagePublisher;
     ros::Publisher mImuPublisher;
     ros::Publisher mHeadPublisher;
-
+    ros::Subscriber mLedSubscriber;
+    ros::ServiceServer imuRstService;
+    bool ResetImuService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+    void LedTaskUpdate(const common::LedTask::ConstPtr &p);
     void PublishImage();
     void setPositions();
     void checkFall();
@@ -42,8 +47,10 @@ private:
     webots::InertialUnit *mIMU;
     std::vector<webots::LED*> mLEDs;
 
-    int fall_type;
-    double mYaw, mInitYaw;
+    common::LedTask ledTask;
+    int fallType;
+    bool imuReset;
+    double mInitYaw;
 };
 
 
