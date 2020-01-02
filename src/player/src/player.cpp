@@ -48,6 +48,7 @@ int main(int argc, char **argv)
 
   uint32_t req_cnt = 0;
   GetAngles getsrv;
+  uint8_t ledstatus = 0;
   getsrv.request.player = "real";
   while (ros::ok())
   {
@@ -66,20 +67,26 @@ int main(int argc, char **argv)
           + (mcuPkt.data[Mcu::REQ_DATA_IMU_OFFSET + 3] << 8))) / 100.0;
         imudata.yaw = ((float)(int16_t)(mcuPkt.data[Mcu::REQ_DATA_IMU_OFFSET + 4] 
           + (mcuPkt.data[Mcu::REQ_DATA_IMU_OFFSET + 5] << 8))) / 10.0;
+        //ROS_INFO("%f %f %f", imudata.pitch, imudata.roll, imudata.yaw);
         NormalizeIMU(imudata);
         imuPublisher.publish(imudata);
-        Mcu::McuPacket ledpkt;
-        ledpkt.type = Mcu::LED_DATA;
-        ledpkt.len = 2;
-        ledpkt.data[0] = ledTask.led1;
-        ledpkt.data[1] = ledTask.led2;
-        mcu->writePacket(ledpkt);
+        if(req_cnt%2==0)
+        {
+          Mcu::McuPacket ledpkt;
+          ledpkt.type = Mcu::LED_DATA;
+          ledpkt.len = 2;
+          ledpkt.data[0] = ledstatus;
+          ledpkt.data[1] = ledstatus;
+          ledstatus = !ledstatus;
+          mcu->writePacket(ledpkt);
+        }
         if (mcuPkt.data[0] == 1)
         {
           if (!dxl_connected)
           {
             imuReset = true;
             dxl_connected = true;
+            ROS_INFO("DXL connected!");
           }
           Mcu::McuPacket pkt;
           int i = 0;
@@ -91,6 +98,8 @@ int main(int argc, char **argv)
             {
               uint32_t gpos = static_cast<uint32_t>(getsrv.response.degs[j]
                 /(360.0f / (float)(DXL_MAX_POS - DXL_MIN_POS)) + DXL_ZERO_POS);
+              uint8_t mid = static_cast<uint8_t>(j + getsrv.response.start_id);
+                
               pkt.data[i * 5 + 0] = static_cast<uint8_t>(j + getsrv.response.start_id);
               pkt.data[i * 5 + 1] = SEU_LOBYTE(SEU_LOWORD(gpos));
               pkt.data[i * 5 + 2] = SEU_HIBYTE(SEU_LOWORD(gpos));
@@ -98,9 +107,14 @@ int main(int argc, char **argv)
               pkt.data[i * 5 + 4] = SEU_HIBYTE(SEU_HIWORD(gpos));
               i++;
             }
+            //ROS_INFO("Write Motor Pkt: %d", pkt.len);
             mcu->writePacket(pkt);
           }
+          clock_t t1 =clock();
           ros::service::call("/getangles", getsrv);
+          clock_t t2 =clock();
+          double t3 = (double)(t2-t1)/CLOCKS_PER_SEC;
+          ROS_INFO("%f", t3);
         }
         else
         {

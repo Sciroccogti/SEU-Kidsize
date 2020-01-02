@@ -14,7 +14,7 @@ const char *LeftArmJoint[2] = { "LeftShoulder", "LeftElbow" };
 const char *RightArmJoint[2] = { "RightShoulder", "RightElbow" };
 const char *LeftLegJoint[6] = { "LeftLegX", "LeftLegY", "LeftLegZ", "LeftKnee", "LeftAnkleX", "LeftAnkleY" };
 const char *RightLegJoint[6] = { "RightLegX", "RightLegY", "RightLegZ", "RightKnee", "RightAnkleX", "RightAnkleY" };
-const double fall_thresh = 1.2;
+const double fall_thresh = 0.75;
 
 SimRobot::SimRobot(ros::NodeHandle *node) : Robot()
 {

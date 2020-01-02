@@ -52,6 +52,9 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
         htask = HeadTask()
         btask = BodyTask()
+        btask.type = BodyTask.TASK_WALK
+        btask.count = 2
+        btask.step = 0.02
         if imgResult.has_ball:
             x = imgResult.ball.x
             y = imgResult.ball.y

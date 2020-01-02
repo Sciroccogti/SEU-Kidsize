@@ -134,7 +134,7 @@ void ImageDebuger::showSrc()
     srcLab->set_size(bgr.size().width, bgr.size().height);
     dstLab->set_size(bgr.size().width, bgr.size().height);
     rgb_dst_ = rgb_src_.clone();
-    cvtColor(bgr, hsv_src_, CV_BGR2HSV);
+    cvtColor(bgr, hsv_src_, CV_BGR2HSV_FULL);
     QImage srcImage(rgb_src_.data, rgb_src_.cols, rgb_src_.rows, QImage::Format_RGB888);
     srcLab->set_image(srcImage);
 }
@@ -233,11 +233,16 @@ void ImageDebuger::procImage(const unsigned int &index)
         for(size_t j=0; j<rgb_dst_.cols; j++)
         {
             Vec3b tmp = hsv_src_.at<Vec3b>(i, j);
-            if((tmp[0]>=H_low && tmp[0]<= H_high)
-                && (tmp[1]>=S_low && tmp[1]<= S_high)
-                && (tmp[2]>=V_low && tmp[2]<= V_high))
+            // if((tmp[0]>=H_low && tmp[0]<= H_high)
+            //     && (tmp[1]>=S_low && tmp[1]<= S_high)
+            //     && (tmp[2]>=V_low && tmp[2]<= V_high))
+            if(tmp[0]>=255.0/8 && tmp[0]<= 255.0*0.5 && tmp[1]>255*0.2 && tmp[2]>255*0.1)
             {
                 rgb_dst_.at<Vec3b>(i, j) = Vec3b(0, 255, 0);
+            }
+            else if(tmp[1]<255*0.4 && tmp[2]>255*0.3)
+            {
+                rgb_dst_.at<Vec3b>(i, j) = Vec3b(255, 255, 255);
             }
         }
     }

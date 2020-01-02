@@ -214,6 +214,7 @@ common::ImuData GetImuData()
 
 bool GetAnglesService(common::GetAngles::Request &req, common::GetAngles::Response &res)
 {
+  //ROS_INFO("getangles");
   bodyMutex.lock();
   if (!bodyAngles.empty())
   {
@@ -231,6 +232,7 @@ bool GetAnglesService(common::GetAngles::Request &req, common::GetAngles::Respon
   if(req.player == "real")
   {
     int sid = maxwell->joint_start_id();
+    res.start_id = sid;
     for(int i=0; i<maxwell->joint_count(); i++)
     {
       auto joint = maxwell->get_joint(sid+i);
