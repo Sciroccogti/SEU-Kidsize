@@ -3,8 +3,6 @@
 
 import rospy
 import math
-from queue import Queue
-import transitions
 from common.msg import HeadTask, BodyTask, LedTask
 from common.msg import PlayerInfo, ImageResult
 from common.msg import HeadAngles, ImuData, GcInfo
