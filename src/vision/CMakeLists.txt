@@ -3,16 +3,16 @@ project(vision)
 
 enable_language(C)
 enable_language(CXX)
-enable_language(CUDA)
-find_package(CUDA REQUIRED)
-include_directories(${CUDA_INCLUDE_DIRS})
-cuda_select_nvcc_arch_flags(NVCC_FLAGS "Auto")
-string (REPLACE ";" " " CUDA_ARCH_FLAGS_SPACE_SEPARATED "${NVCC_FLAGS}")
-set(CMAKE_CUDA_FLAGS "${CUDA_ARCH_FLAGS_SPACE_SEPARATED}")
+#enable_language(CUDA)
+#find_package(CUDA REQUIRED)
+#include_directories(${CUDA_INCLUDE_DIRS})
+#cuda_select_nvcc_arch_flags(NVCC_FLAGS "Auto")
+#string (REPLACE ";" " " CUDA_ARCH_FLAGS_SPACE_SEPARATED "${NVCC_FLAGS}")
+#set(CMAKE_CUDA_FLAGS "${CUDA_ARCH_FLAGS_SPACE_SEPARATED}")
 set(CMAKE_CXX_STANDARD 11)
 find_package(OpenCV)
-add_definitions(-DGPU)
-add_definitions(-DCUDNN)
+#add_definitions(-DGPU)
+#add_definitions(-DCUDNN)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -27,8 +27,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   config
   common
-  seuimage
-  darknet
+#  seuimage
+#  darknet
 )
 
 ## System dependencies are found with CMake's conventions
@@ -152,7 +152,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(camera src/camera.cpp src/vision_parser.cpp)
 set(CAMERA_FILES src/camera/MvCamera.cpp src/camera/UvCamera.cpp src/camera/TpCamera.cpp)
-add_executable(vision src/Vision.cpp ${CAMERA_FILES})
+#add_executable(vision src/Vision.cpp ${CAMERA_FILES})
 add_executable(sim_vision src/SimVision.cpp src/camera/TpCamera.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -171,19 +171,19 @@ add_executable(sim_vision src/SimVision.cpp src/camera/TpCamera.cpp)
 #   config
 # )
 
-target_link_libraries(vision
-  ${catkin_LIBRARIES}
-  cuda
-  cudart
-  darknet
-  seuimage
-  MVSDK
-  opencv_core
-  opencv_imgproc
-  opencv_imgcodecs
-  config
-  pthread
-)
+# target_link_libraries(vision
+#   ${catkin_LIBRARIES}
+#   cuda
+#   cudart
+#   darknet
+#   seuimage
+#   MVSDK
+#   opencv_core
+#   opencv_imgproc
+#   opencv_imgcodecs
+#   config
+#   pthread
+# )
 
 target_link_libraries(sim_vision
   ${catkin_LIBRARIES}

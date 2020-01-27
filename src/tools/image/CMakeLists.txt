@@ -3,25 +3,25 @@ project(image)
 
 enable_language(C)
 enable_language(CXX)
-enable_language(CUDA)
-find_package(CUDA REQUIRED)
-include_directories(${CUDA_INCLUDE_DIRS})
-cuda_select_nvcc_arch_flags(NVCC_FLAGS "Auto")
-string (REPLACE ";" " " CUDA_ARCH_FLAGS_SPACE_SEPARATED "${NVCC_FLAGS}")
-set(CMAKE_CUDA_FLAGS "${CUDA_ARCH_FLAGS_SPACE_SEPARATED}")
+#enable_language(CUDA)
+#find_package(CUDA REQUIRED)
+#include_directories(${CUDA_INCLUDE_DIRS})
+#cuda_select_nvcc_arch_flags(NVCC_FLAGS "Auto")
+#string (REPLACE ";" " " CUDA_ARCH_FLAGS_SPACE_SEPARATED "${NVCC_FLAGS}")
+#set(CMAKE_CUDA_FLAGS "${CUDA_ARCH_FLAGS_SPACE_SEPARATED}")
 set(CMAKE_CXX_STANDARD 11)
-find_package(OpenCV 3.2)
-add_definitions(-DGPU)
-add_definitions(-DCUDNN)
+find_package(OpenCV)
+#add_definitions(-DGPU)
+#add_definitions(-DCUDNN)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
   common
-  darknet
+#  darknet
   roscpp
-  seuimage
+#  seuimage
   seumath
   roslib
   config
@@ -59,7 +59,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(image_monitor src/ImageLabel.cpp src/image_monitor.cpp)
-add_executable(image_debuger src/ImageLabel.cpp src/image_debuger.cpp)
+#add_executable(image_debuger src/ImageLabel.cpp src/image_debuger.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(image_monitor
@@ -70,13 +70,13 @@ target_link_libraries(image_monitor
 #  ${OpenCV_}
 )
 
-target_link_libraries(image_debuger
-  ${catkin_LIBRARIES}
-  Qt5::Widgets
-  Qt5::Core
-  Qt5::Gui
-  cuda
-  cudart
-  darknet
-  seuimage
-)
+# target_link_libraries(image_debuger
+#   ${catkin_LIBRARIES}
+#   Qt5::Widgets
+#   Qt5::Core
+#   Qt5::Gui
+#   cuda
+#   cudart
+#   darknet
+#   seuimage
+# )
