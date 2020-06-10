@@ -12,9 +12,12 @@
     + cuDNN >= 7.0   
     + libeigen3-dev
     + MVSDK (摄像头SDK)  
+    + rosbridge_server
+    + web_video_server
 
 - Python
     + paramiko  
+    + flask
 
 - 仿真环境  
     + Webots(安装位置必须是/usr/local/webots)  

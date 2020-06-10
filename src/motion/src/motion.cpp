@@ -7,13 +7,16 @@
 #include <common/ImuData.h>
 #include <common/GetAngles.h>
 #include <common/AddAngles.h>
+#include <common/GetActions.h>
 #include <std_srvs/Empty.h>
-#include <motion/ActionEngine.hpp>
+#include <std_srvs/SetBool.h>
+#include <robot/action_engine.hpp>
 #include <robot/robot.hpp>
 #include <bits/stdc++.h>
 #include <ros/ros.h>
 
 using namespace Eigen;
+
 
 void UpdateBodyTask(const common::BodyTask::ConstPtr &p);
 common::BodyTask GetBodyTask();
@@ -23,8 +26,9 @@ void UpdateImu(const common::ImuData::ConstPtr &p);
 common::ImuData GetImuData();
 bool GetAnglesService(common::GetAngles::Request &req, common::GetAngles::Response &res);
 bool AddAnglesService(common::AddAngles::Request &req, common::AddAngles::Response &res);
+bool GetActionsService(common::GetActions::Request &req, common::GetActions::Response &res);
 
-std::shared_ptr<ActionEngine> actionEng;
+std::shared_ptr<robot::ActionEngine> actionEng;
 std::shared_ptr<WalkEngine> walkEng;
 std::shared_ptr<ScanEngine> scanEng;
 std::shared_ptr<robot::Robot> maxwell;
@@ -71,7 +75,7 @@ int main(int argc, char **argv)
     return 0;
   }
   maxwell = std::make_shared<robot::Robot>(robot_file, offset_file);
-  actionEng = std::make_shared<ActionEngine>(act_file, maxwell);
+  actionEng = std::make_shared<robot::ActionEngine>(act_file, maxwell);
   walkEng = std::make_shared<WalkEngine>(walk_file, maxwell);
   scanEng = std::make_shared<ScanEngine>();
 
@@ -80,6 +84,7 @@ int main(int argc, char **argv)
   ros::Subscriber imuSub = node.subscribe("/sensor/imu", 1, UpdateImu);
   ros::ServiceServer getAglSrv = node.advertiseService("/getangles", GetAnglesService);
   ros::ServiceServer addAglSrv = node.advertiseService("/addangles", AddAnglesService);
+  ros::ServiceServer getActsSrv = node.advertiseService("/getactions", GetActionsService);
 
   double phase = 0.0;
   bool isWalking = false;
@@ -271,4 +276,10 @@ bool AddAnglesService(common::AddAngles::Request &req, common::AddAngles::Respon
     bodyAngles.insert(bodyAngles.end(), req.angles.begin(), req.angles.end());
     debug = true;
     return true;
+}
+
+bool GetActionsService(common::GetActions::Request &req, common::GetActions::Response &res)
+{
+  res.actions = actionEng->getActions();
+  return true;
 }

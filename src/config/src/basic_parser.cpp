@@ -1,6 +1,5 @@
 #include <config/basic_parser.hpp>
 #include <bits/stdc++.h>
-#include <ros/ros.h>
 
 namespace common
 {
@@ -14,7 +13,6 @@ namespace common
 
         if (!ifs)
         {
-            ROS_ERROR("open file: [%s] failed", filename.c_str());
             return false;
         }
 
@@ -158,7 +156,6 @@ namespace common
         }
         else
         {
-            ROS_ERROR("get tree from file failed");
             return false;
         }
     }

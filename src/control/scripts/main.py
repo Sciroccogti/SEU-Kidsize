@@ -52,7 +52,7 @@ if __name__ == '__main__':
         btask = BodyTask()
         btask.type = BodyTask.TASK_WALK
         btask.count = 2
-        btask.step = 0.02
+        btask.step = 0.0
         if imgResult.has_ball:
             x = imgResult.ball.x
             y = imgResult.ball.y

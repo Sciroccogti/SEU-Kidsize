@@ -81,4 +81,46 @@ enum FreeKickStage
     FK_EXECUTE
 };
 
+enum FsmState
+{
+    FSM_STATE_READY,
+    FSM_STATE_GETUP,
+    FSM_STATE_SEARCH_BALL,
+    FSM_STATE_GOTO_BALL,
+    FSM_STATE_KICK_BALL,
+    FSM_STATE_DRIBBLE,
+    FSM_STATE_SL
+};
+
+struct FiledInfo
+{
+    int field_length;
+    int field_width;
+    int goal_depth;
+    int goal_width;
+    int goal_height;
+    int goal_area_length;
+    int goal_area_width;
+    int penalty_mark_distance;
+    int center_circle_diameter;
+    int border_strip_width_min;
+
+    float scale=1.0;
+
+    void scale_field(float s=1.0)
+    {
+        scale *= s;
+        field_length *= s;
+        field_width *= s;
+        goal_depth *= s;
+        goal_width *= s;
+        goal_height *= s;;
+        goal_area_length *= s;
+        goal_area_width *= s;
+        penalty_mark_distance *= s;
+        center_circle_diameter *= s;
+        border_strip_width_min *= s;
+    }
+};
+
 #endif

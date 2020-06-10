@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- start web_video_server -->
+  <node pkg="web_video_server" type="web_video_server" name="web_video_server" output="screen"/>
+  <!-- start rosbridge_server -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
+  <!-- start web_server -->
+  <node pkg="web_monitor" type="web.py" name="webpy" output="screen"/>
+</launch>

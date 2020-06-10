@@ -106,7 +106,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
+#  INCLUDE_DIRS include
 #  LIBRARIES motion
   CATKIN_DEPENDS common robot roscpp rospy seumath
 #  DEPENDS system_lib
@@ -119,7 +119,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+  # include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -146,13 +146,9 @@ set(WALK_FILES  src/walk/WalkEngine.cpp
   src/walk/Spline.cpp
 )
 
-set(ACT_FILES src/action/ActionEngine.cpp)
-
 set(SCAN_FILES src/scan/ScanEngine.cpp)
 
-add_executable(motion src/motion.cpp ${WALK_FILES} ${ACT_FILES} ${SCAN_FILES})
-
-add_library(action STATIC ${ACT_FILES})
+add_executable(motion src/motion.cpp ${WALK_FILES} ${SCAN_FILES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -166,12 +162,6 @@ add_library(action STATIC ${ACT_FILES})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(motion
-  ${catkin_LIBRARIES}
-  config
-  robot
-)
-
-target_link_libraries(action
   ${catkin_LIBRARIES}
   config
   robot

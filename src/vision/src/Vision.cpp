@@ -10,7 +10,8 @@
 #include <std_srvs/SetBool.h>
 #include <common/SetInt.h>
 #include <common/ImageResult.h>
-#include <sensor_msgs/CompressedImage.h>
+#include <common/ImageSnap.h>
+#include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 
 using namespace seuimage;
@@ -24,6 +25,7 @@ void Run(const ros::TimerEvent& event);
 
 void ImagePublish(const cv::Mat &bgr);
 bool SendTypeService(SetInt::Request &req, SetInt::Response &res);
+bool ImageSnapService(ImageSnap::Request &req, ImageSnap::Response &res);
 
 const int width=640;
 const int height=480;
@@ -52,9 +54,10 @@ int main(int argc, char **argv)
         camera->Open();
     }
     VisionInit();
-    imagePublisher = node.advertise<sensor_msgs::CompressedImage>("/result/vision/compressed", 1);
+    imagePublisher = node.advertise<sensor_msgs::Image>("/result/vision/image", 1);
     resultPublisher = node.advertise<common::ImageResult>("/result/vision/imgproc", 1);
     ros::ServiceServer typeServer = node.advertiseService("/setting/sendtype", SendTypeService);
+    ros::ServiceServer imgSnapSrv = node.advertiseService("/debug/image/snap", ImageSnapService);
     camera->Run();
     ros::Timer timer = node.createTimer(ros::Duration(0.05), Run);
     ros::spin();
@@ -190,14 +193,12 @@ void Run(const ros::TimerEvent& event)
             ROS_ERROR("download error");
             return;
         }
-        cv::Mat bgr;
-        cv::cvtColor(rgb, bgr, CV_RGB2BGR);
         
         if(send_type>1)
         {
             if (!ball_dets.empty())
             {
-                cv::rectangle(bgr, cv::Point(ball_dets[0].x, ball_dets[0].y), cv::Point(ball_dets[0].x + ball_dets[0].w,
+                cv::rectangle(rgb, cv::Point(ball_dets[0].x, ball_dets[0].y), cv::Point(ball_dets[0].x + ball_dets[0].w,
                             ball_dets[0].y + ball_dets[0].h), cv::Scalar(255, 0, 0), 2);
             }
 
@@ -208,11 +209,11 @@ void Run(const ros::TimerEvent& event)
                     break;
                 }
 
-                cv::rectangle(bgr, cv::Point(post_dets[i].x, post_dets[i].y), cv::Point(post_dets[i].x + post_dets[i].w,
+                cv::rectangle(rgb, cv::Point(post_dets[i].x, post_dets[i].y), cv::Point(post_dets[i].x + post_dets[i].w,
                             post_dets[i].y + post_dets[i].h), cv::Scalar(0, 0, 255), 2);
             }
         }
-        ImagePublish(bgr);
+        ImagePublish(rgb);
     }
 }
 
@@ -282,16 +283,17 @@ bool VisionInit()
     return true;
 }
 
-void ImagePublish(const cv::Mat &bgr)
+void ImagePublish(const cv::Mat &rgb)
 {
-    sensor_msgs::CompressedImage image;
-    std::vector<uint8_t> buf;
-    cv::imencode(".jpg", bgr, buf);
+    sensor_msgs::Image image;
     image.header.stamp = ros::Time::now();
-    image.header.frame_id = "vision";
-    image.format = "jpeg";
-    image.data.resize(buf.size());
-    memcpy(&image.data[0], &(buf[0]), buf.size());
+    image.header.frame_id = "camera";
+    image.width = width;
+    image.height = height;
+    image.step = 3 * width;
+    image.encoding = sensor_msgs::image_encodings::RGB8;
+    image.data.resize(3 * width * height);
+    memcpy(&image.data[0], rgb.data, image.data.size());
     imagePublisher.publish(image);
 }
 
@@ -325,8 +327,15 @@ bool MallocMemory()
     
     return true;
 }
+
 bool SendTypeService(SetInt::Request &req, SetInt::Response &res)
 {
     send_type = req.number;
+    ros::param::set("image", req.number);
+    return true;
+}
+
+bool ImageSnapService(ImageSnap::Request &req, ImageSnap::Response &res)
+{
     return true;
 }

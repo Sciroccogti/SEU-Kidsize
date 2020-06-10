@@ -126,6 +126,7 @@ include_directories(
 ## Declare a C++ library
 add_library(robot STATIC
   src/robot.cpp
+  src/action_engine.cpp
 )
 
 ## Add cmake target dependencies of the library

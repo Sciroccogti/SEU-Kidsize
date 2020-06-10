@@ -139,8 +139,10 @@ include_directories(
 ## Declare a C++ nodeexecutable
 ## With catkin_manodeke all packages are built within a single CMake context
 ## The recommendenoded prefix ensures that target names across packages don't collide
-add_executable(action_monitor src/action_monitor.cpp src/RobotGL.cpp)
-add_executable(action_debuger src/action_debuger.cpp src/RobotGL.cpp)
+add_executable(action_debuger 
+  src/action_debuger.cpp 
+  src/RobotGL.cpp
+  src/main.cpp)
 
 ## Rename C++ exenodecutable without prefix
 ## The above reconodemmended prefix causes long target names, the following renames the
@@ -153,18 +155,6 @@ add_executable(action_debuger src/action_debuger.cpp src/RobotGL.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(action_monitor
-  ${catkin_LIBRARIES}
-  glut
-  GLU
-  GL
-  Qt5::Widgets
-  Qt5::Core
-  Qt5::Gui
-  robot
-  config
-)
-
 target_link_libraries(action_debuger
   ${catkin_LIBRARIES}
   glut
@@ -175,7 +165,6 @@ target_link_libraries(action_debuger
   Qt5::Gui
   robot
   config
-  action
 )
 #############
 ## Install ##

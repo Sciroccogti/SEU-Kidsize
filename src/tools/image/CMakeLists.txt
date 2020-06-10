@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.14)
 project(image)
 
 enable_language(C)
@@ -25,8 +25,6 @@ find_package(catkin REQUIRED COMPONENTS
   seumath
   roslib
   config
-  image_transport
-  cv_bridge
 )
 
 ## System dependencies are found with CMake's conventions
@@ -58,17 +56,12 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(image_monitor src/ImageLabel.cpp src/image_monitor.cpp)
-add_executable(image_debuger src/ImageLabel.cpp src/image_debuger.cpp)
+add_executable(image_debuger 
+  src/ImageLabel.cpp 
+  src/image_debuger.cpp
+  src/main.cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(image_monitor
-  ${catkin_LIBRARIES}
-  Qt5::Widgets
-  Qt5::Core
-  Qt5::Gui
-#  ${OpenCV_}
-)
 
 target_link_libraries(image_debuger
   ${catkin_LIBRARIES}

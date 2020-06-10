@@ -7,7 +7,7 @@
 #include <robot/robot.hpp>
 #include <ros/ros.h>
 #include <common/AddAngles.h>
-#include <motion/ActionEngine.hpp>
+#include <robot/action_engine.hpp>
 
 #define SLIDER_RANGE 1000
 
@@ -175,7 +175,7 @@ private:
     std::vector<CKSlider *> mKsliders;
     std::map<std::string, CJointDegWidget *> mJDInfos;
     std::shared_ptr<robot::Robot> mRbt;
-    std::shared_ptr<ActionEngine> action_eng_;
+    std::shared_ptr<robot::ActionEngine> action_eng_;
     std::string act_file_;
     ros::NodeHandle &node;
 };

@@ -8,14 +8,6 @@ using namespace cv;
 using namespace std;
 using namespace seuimage;
 
-int main(int argc, char **argv)
-{
-    QApplication app(argc, argv);
-    ImageDebuger foo;
-    foo.show();
-    return app.exec();
-}
-
 ImageDebuger::ImageDebuger()
 {
     height_ = 480;

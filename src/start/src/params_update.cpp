@@ -8,6 +8,7 @@ using namespace common;
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "config");
+    ros::NodeHandle node;
     std::string cfgpath = ros::package::getPath("config")+"/conf/";
     const std::string root_cfg_file = "config.conf";
     string cfgfile(cfgpath+root_cfg_file);
@@ -16,6 +17,10 @@ int main(int argc, char **argv)
         ROS_ERROR("parser cfgfile: %s failed", cfgfile.c_str());
         return false;
     }
+    bool gamectrl;
+    node.param<bool>("gamectrl", gamectrl, false);
+    ros::param::set("gamectrl", gamectrl);
+    ros::param::set("image", 0);
     int id = pt.get<int>("id");
     try
     {

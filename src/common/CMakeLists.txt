@@ -36,6 +36,8 @@ add_service_files(
   GetAngles.srv
   AddAngles.srv
   SetInt.srv
+  GetActions.srv
+  ImageSnap.srv
 )
 
 ## Generate actions in the 'action' folder

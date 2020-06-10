@@ -12,17 +12,6 @@ using namespace robot;
 using namespace seumath;
 using namespace Eigen;
 
-int main(int argc, char **argv)
-{
-    ros::init(argc, argv, "action_debuger");
-    ros::NodeHandle node;
-    QApplication app(argc, argv);
-    glutInit(&argc, argv);
-    ActionDebuger foo(node);
-    foo.show();
-    return app.exec();
-}
-
 ActionDebuger::ActionDebuger(ros::NodeHandle &n): node(n)
 {
     initStatusBar();

@@ -16,11 +16,12 @@ int main(int argc, char **argv)
         }
         catch (const ros::InvalidNameException &e)
         {
-        ROS_WARN("%s", e.what());
+            ROS_WARN("%s", e.what());
         }
         usleep(100000);
     }
     if(!params_seted) return 0;
+    
     GameCtrl gc(node, udp_service);
     gc.start();
     udp_service.run();

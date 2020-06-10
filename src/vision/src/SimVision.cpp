@@ -2,7 +2,8 @@
 #include <ros/ros.h>
 #include <common/SetInt.h>
 #include <common/ImageResult.h>
-#include <sensor_msgs/CompressedImage.h>
+#include <common/ImageSnap.h>
+#include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 
 using namespace common;
@@ -11,6 +12,7 @@ void Run(const ros::TimerEvent& event);
 
 void ImagePublish(const cv::Mat &bgr);
 bool SendTypeService(SetInt::Request &req, SetInt::Response &res);
+bool ImageSnapService(ImageSnap::Request &req, ImageSnap::Response &res);
 
 const int width=640;
 const int height=480;
@@ -27,9 +29,10 @@ int main(int argc, char **argv)
     ros::NodeHandle node;
     camera = std::make_shared<TpCamera>(node, "/sensor/image");
     camera->Open();
-    imagePublisher = node.advertise<sensor_msgs::CompressedImage>("/result/vision/compressed", 1);
+    imagePublisher = node.advertise<sensor_msgs::Image>("/result/vision/image", 1);
     resultPublisher = node.advertise<common::ImageResult>("/result/vision/imgproc", 1);
     ros::ServiceServer typeServer = node.advertiseService("/setting/sendtype", SendTypeService);
+    ros::ServiceServer imgSnapSrv = node.advertiseService("/debug/image/snap", ImageSnapService);
     camera->Run();
     ros::Timer timer = node.createTimer(ros::Duration(0.05), Run);
     ros::spin();
@@ -129,33 +132,39 @@ void Run(const ros::TimerEvent& event)
 
     if(send_type>0)
     {   
-        cv::Mat bgr;
-        cv::cvtColor(srcMat, bgr, CV_RGB2BGR);
         if(send_type>1)
         {
-            cv::circle(bgr, ball, 5, cv::Scalar(0, 0, 255), 2);
-            cv::circle(bgr, post1, 5, cv::Scalar(255, 0, 0), 2);
-            cv::circle(bgr, post2, 5, cv::Scalar(255, 0, 0), 2);
+            cv::circle(srcMat, ball, 5, cv::Scalar(0, 0, 255), 2);
+            cv::circle(srcMat, post1, 5, cv::Scalar(255, 0, 0), 2);
+            cv::circle(srcMat, post2, 5, cv::Scalar(255, 0, 0), 2);
         }
-        ImagePublish(bgr);
+        ImagePublish(srcMat);
     }
 }
 
-void ImagePublish(const cv::Mat &bgr)
+void ImagePublish(const cv::Mat &rgb)
 {
-    sensor_msgs::CompressedImage image;
-    std::vector<uint8_t> buf;
-    cv::imencode(".jpg", bgr, buf);
+    sensor_msgs::Image image;
     image.header.stamp = ros::Time::now();
-    image.header.frame_id = "vision";
-    image.format = "jpeg";
-    image.data.resize(buf.size());
-    memcpy(&image.data[0], &(buf[0]), buf.size());
+    image.header.frame_id = "camera";
+    image.width = width;
+    image.height = height;
+    image.step = 3 * width;
+    image.encoding = sensor_msgs::image_encodings::RGB8;
+    image.data.resize(3 * width * height);
+    
+    memcpy(&image.data[0], rgb.data, image.data.size());
     imagePublisher.publish(image);
 }
 
 bool SendTypeService(SetInt::Request &req, SetInt::Response &res)
 {
     send_type = req.number;
+    ros::param::set("image", req.number);
+    return true;
+}
+
+bool ImageSnapService(ImageSnap::Request &req, ImageSnap::Response &res)
+{
     return true;
 }
