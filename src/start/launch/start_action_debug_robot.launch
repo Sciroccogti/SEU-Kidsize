@@ -2,10 +2,8 @@
 <launch>
   <!-- start update -->
   <node pkg="start" type="params_update" name="params_update" output="screen" />
-  <!-- start player -->
-  <node pkg="player" type="player" name="player" output="screen"/>
-  <!-- start motion -->
-  <node pkg="motion" type="motion" name="motion" output="screen"/>
+  <!-- start rosbridge_server -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
   <!-- start debuger -->
   <node pkg="action" type="action_debuger" name="action_debuger" output="screen"/>
 </launch>

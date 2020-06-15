@@ -32,9 +32,8 @@ bool parse_field(const std::string &filename, FiledInfo &field)
 TeamMonitor::TeamMonitor(): socket_(udp_service, udp::endpoint(udp::v4(), TC_COMM_PORT))
 {
     std::string cfgpath = ros::package::getPath("config")+"/conf/";
-    std::string field_file = cfgpath+"model/field.cfg";
+    std::string field_file = cfgpath+"model/field.conf";
     parse_field(field_file, field_);
-    field_.scale_field(0.5);
     setFixedSize(field_.field_length + 2 * field_.border_strip_width_min, field_.field_width + 2 * field_.border_strip_width_min);
     setStyleSheet("background:green");
     td_ = std::move(std::thread([this]()

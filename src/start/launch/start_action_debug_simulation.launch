@@ -1,11 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- start update -->
-  <node pkg="start" type="params_update" name="params_update" output="screen" />
-  <!-- start simulation -->
-  <include file="$(find simulation)/launch/simulation.launch" />
-  <!-- start motion -->
-  <node pkg="motion" type="motion" name="motion" output="screen"/>
   <!-- start debuger -->
   <node pkg="action" type="action_debuger" name="action_debuger" output="screen"/>
 </launch>

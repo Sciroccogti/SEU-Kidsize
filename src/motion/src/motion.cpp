@@ -82,9 +82,9 @@ int main(int argc, char **argv)
   ros::Subscriber bodySub = node.subscribe("/task/body", 1, UpdateBodyTask);
   ros::Subscriber headSub = node.subscribe("/task/head", 1, UpdateHeadTask);
   ros::Subscriber imuSub = node.subscribe("/sensor/imu", 1, UpdateImu);
-  ros::ServiceServer getAglSrv = node.advertiseService("/getangles", GetAnglesService);
-  ros::ServiceServer addAglSrv = node.advertiseService("/addangles", AddAnglesService);
-  ros::ServiceServer getActsSrv = node.advertiseService("/getactions", GetActionsService);
+  ros::ServiceServer getAglSrv = node.advertiseService("/get_angles", GetAnglesService);
+  ros::ServiceServer addAglSrv = node.advertiseService("/add_angles", AddAnglesService);
+  ros::ServiceServer getActsSrv = node.advertiseService("/get_actions", GetActionsService);
 
   double phase = 0.0;
   bool isWalking = false;
@@ -273,6 +273,7 @@ bool GetAnglesService(common::GetAngles::Request &req, common::GetAngles::Respon
 
 bool AddAnglesService(common::AddAngles::Request &req, common::AddAngles::Response &res)
 {
+    ROS_INFO("AddAnglesService");
     bodyAngles.insert(bodyAngles.end(), req.angles.begin(), req.angles.end());
     debug = true;
     return true;

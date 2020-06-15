@@ -1,234 +1,233 @@
 #!/usr/bin/env python3
-#coding: utf-8
+# coding: utf-8
 
 import sys
 import os
+import json
 import common
 import config
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 import SSH
 
-class TerminalWidget(QtWidgets.QWidget):
-    def __init__(self, shell):
-        super().__init__()
-        self._shell = shell
-        self._outputBox = QtWidgets.QTextEdit()
-        self._inputLine = QtWidgets.QLineEdit()
-        self._outputBox.setReadOnly(True)
-        self._inputLine.setPlaceholderText('input command here, enter to execute')
-        self._inputLine.returnPressed.connect(self._run)
-        mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.addWidget(self._outputBox)
-        mainLayout.addWidget(self._inputLine)
-        self.setLayout(mainLayout)
-    
-    def _run(self):
-        cmd = self._inputLine.text()
-        if len(cmd) == 0:
-            return
-        self._inputLine.setText('')
-        if cmd == 'clear':
-            self._outputBox.setText('')
-        else:
-            ret = self._shell.exec_command(cmd)
-            self._outputBox.append(ret)
 
+class OptionWidget(QtWidgets.QWidget):
+    trans = QtCore.pyqtSignal(int, int)
 
-class EasyWindow(QtWidgets.QMainWindow):
-    closed  = QtCore.pyqtSignal(str)
-    def __init__(self, mid):
-        super().__init__()
-        self._id = mid
-        self._host = common.get_config(config.conf_file, 'players.{}.address'.format(self._id))
+    def __init__(self, host):
+        super(OptionWidget, self).__init__()
+        self._host = host
         self._ssh = None
         self._connected = False
         self._shell = None
-        try:
-            self._ssh = SSH.SSH(self._host, config.username, config.password)
-            self._shell = self._ssh.create_shell()
-            self._connected = True
-        except Exception as e:
-            print(e.args)
         self._init_ui()
-        if self._connected:
-            self._statusBar.showMessage('connected to {}@{}'.format(config.username, self._host))
-        else:
-            self._statusBar.showMessage('connected to {}@{} failed'.format(config.username, self._host))
-            
+        self.hostEdit.setText(self._host)
+        self.setOptEnable(False)
+        self._recv_threads = []
 
-    def _init_ui(self):                
-        self.setWindowTitle('EasyStart: {}'.format(self._id))
-        mainWidget = QtWidgets.QWidget()
+    def _init_ui(self):
         mainLayout = QtWidgets.QVBoxLayout()
-        files = os.listdir(config.local_root+'/src')
-        srcGroup = QtWidgets.QGroupBox("Source Files")
+        upLayout = QtWidgets.QVBoxLayout()
+        hostLayout = QtWidgets.QHBoxLayout()
+        self.hostEdit = QtWidgets.QLineEdit()
+        self._connBtn = QtWidgets.QPushButton('连接')
+        self._connBtn.clicked.connect(self.proc_btn_connect)
+        hostLayout.addWidget(self.hostEdit)
+        hostLayout.addWidget(self._connBtn)
+        upLayout.addLayout(hostLayout)
+        files = os.listdir(config.local_root + '/src')
+        srcGroup = QtWidgets.QGroupBox("代码文件夹")
+        srcGroup.setStyleSheet('''QGroupBox { border: 2px solid black;
+                                                border-radius: 5px;
+                                                margin-top:1ex; } 
+                                     QGroupBox::title {
+                                        subcontrol-origin: margin;
+                                        subcontrol-position: top center; 
+                                        padding: 0 3px; }''')
         gboxLayout = QtWidgets.QVBoxLayout()
         self._srcCheckBoxes = []
+        slayout = None
+        i = 0
         for f in files:
-            if not os.path.isdir(config.local_root+'/src/'+f):
+            if i % 2 == 0:
+                slayout = QtWidgets.QHBoxLayout()
+                gboxLayout.addLayout(slayout)
+            if not os.path.isdir(config.local_root + '/src/' + f):
                 continue
-            box = QtWidgets.QCheckBox(f)
-            self._srcCheckBoxes.append(box)
-            gboxLayout.addWidget(box)
+            if f.find('tools') >= 0:
+                label = QtWidgets.QLabel(f)
+                label.setFixedWidth(150)
+                slayout.addWidget(label)
+            else:
+                box = QtWidgets.QCheckBox(f)
+                box.setFixedWidth(150)
+                self._srcCheckBoxes.append(box)
+                slayout.addWidget(box)
+            i = i + 1
         srcGroup.setLayout(gboxLayout)
-        leftLayout = QtWidgets.QVBoxLayout()
-        leftLayout.addWidget(srcGroup)
-
-        self._uploadLocalLine = QtWidgets.QLineEdit()
-        self._uploadLocalLine.setPlaceholderText('local path')
-        self._ulRealCheck = QtWidgets.QCheckBox('realpath')
-        self._uploadRemoteLine = QtWidgets.QLineEdit()
-        self._uploadRemoteLine.setPlaceholderText('remote path')
-        self._urRealCheck = QtWidgets.QCheckBox('realpath')
-        self._uploadBtn = QtWidgets.QPushButton('Upload')
-        self._uploadBtn.clicked.connect(self.proc_btn_upload)
-        uploadLayout = QtWidgets.QHBoxLayout()
-        uploadLayout.addWidget(self._uploadLocalLine)
-        uploadLayout.addWidget(self._ulRealCheck)
-        uploadLayout.addWidget(self._uploadRemoteLine)
-        uploadLayout.addWidget(self._urRealCheck)
-        uploadLayout.addWidget(self._uploadBtn)
-
-        self._downloadRemoteLine = QtWidgets.QLineEdit()
-        self._downloadRemoteLine.setPlaceholderText('remote path')
-        self._drRealCheck = QtWidgets.QCheckBox('realpath')
-        self._downloadLocalLine = QtWidgets.QLineEdit()
-        self._downloadLocalLine.setPlaceholderText('local path')
-        self._dlRealCheck = QtWidgets.QCheckBox('realpath')
-        self._downloadBtn = QtWidgets.QPushButton('Download')
-        self._downloadBtn.clicked.connect(self.proc_btn_download)
-        downloadLayout = QtWidgets.QHBoxLayout()
-        downloadLayout.addWidget(self._downloadRemoteLine)
-        downloadLayout.addWidget(self._drRealCheck)
-        downloadLayout.addWidget(self._downloadLocalLine)
-        downloadLayout.addWidget(self._dlRealCheck)
-        downloadLayout.addWidget(self._downloadBtn)
-
-        self._inputBox = QtWidgets.QTextEdit()
-        self._inputBox.setAcceptRichText(False)
-        self._tabWidget = QtWidgets.QTabWidget()
-        rightLayout = QtWidgets.QVBoxLayout()
-        rightLayout.addLayout(uploadLayout)
-        rightLayout.addLayout(downloadLayout)
-        rightLayout.addWidget(self._tabWidget)
-        addTermBtn = QtWidgets.QPushButton("New Terminal")
-        addTermBtn.clicked.connect(self.proc_btn_add_term)
-        rmTermBtn = QtWidgets.QPushButton("Remove Terminal")
-        rmTermBtn.clicked.connect(self.proc_btn_rm_term)
-        termLayout = QtWidgets.QHBoxLayout()
-        termLayout.addWidget(addTermBtn)
-        termLayout.addWidget(rmTermBtn)
-        rightLayout.addLayout(termLayout)
-        
-        upLayout = QtWidgets.QHBoxLayout()
-        upLayout.addLayout(leftLayout)
-        upLayout.addLayout(rightLayout)
+        upLayout.addWidget(srcGroup)
+        btnLayout = QtWidgets.QHBoxLayout()
+        self._uploadSrcsBtn = QtWidgets.QPushButton('上传代码')
+        self._uploadSrcsBtn.clicked.connect(self.proc_btn_upload_srcs)
+        btnLayout.addWidget(self._uploadSrcsBtn)
+        self._buildBtn = QtWidgets.QPushButton('编译')
+        self._buildBtn.clicked.connect(self.proc_btn_build)
+        btnLayout.addWidget(self._buildBtn)
+        upLayout.addLayout(btnLayout)
+        btnLayout = QtWidgets.QHBoxLayout()
+        self._runDebugBtn = QtWidgets.QPushButton('启动调试服务器')
+        self._runDebugBtn.clicked.connect(self.proc_btn_run_debug)
+        btnLayout.addWidget(self._runDebugBtn)
+        self._runRobotBtn = QtWidgets.QPushButton('启动机器人')
+        self._runRobotBtn.clicked.connect(self.proc_btn_run_robot)
+        btnLayout.addWidget(self._runRobotBtn)
+        upLayout.addLayout(btnLayout)
+        btnLayout = QtWidgets.QHBoxLayout()
+        self._runRemoteBtn = QtWidgets.QPushButton('以遥控模式启动')
+        self._runRemoteBtn.clicked.connect(self.proc_btn_run_remote)
+        btnLayout.addWidget(self._runRemoteBtn)
+        self._runNoVision = QtWidgets.QPushButton('无视觉启动')
+        self._runNoVision.clicked.connect(self.proc_btn_run_no_vision)
+        btnLayout.addWidget(self._runNoVision)
+        upLayout.addLayout(btnLayout)
+        btnLayout = QtWidgets.QHBoxLayout()
+        self._runRebootBtn = QtWidgets.QPushButton('重启')
+        self._runRobotBtn.clicked.connect(self.proc_btn_reboot)
+        btnLayout.addWidget(self._runRebootBtn)
+        self._runPoweroffVision = QtWidgets.QPushButton('关机')
+        self._runPoweroffVision.clicked.connect(self.proc_btn_power_off)
+        btnLayout.addWidget(self._runPoweroffVision)
+        upLayout.addLayout(btnLayout)
         mainLayout.addLayout(upLayout)
-        self._outputBox = QtWidgets.QTextEdit()
-        self._outputBox.setReadOnly(True)
-        mainLayout.addWidget(self._outputBox)
-        mainWidget.setLayout(mainLayout)
-        self.setCentralWidget(mainWidget)
-        self._statusBar = QtWidgets.QStatusBar()
-        self.setStatusBar(self._statusBar)
+        self._processBar = QtWidgets.QProgressBar()
+        self._processBar.setRange(0, 100)
+        mainLayout.addWidget(self._processBar)
+        self.setLayout(mainLayout)
+        self.trans.connect(self.on_tran)
+
+    def setOptEnable(self, e):
+        self._uploadSrcsBtn.setEnabled(e)
+        self._buildBtn.setEnabled(e)
+        self._runRobotBtn.setEnabled(e)
+        self._runDebugBtn.setEnabled(e)
+        self._runRemoteBtn.setEnabled(e)
+        self._runNoVision.setEnabled(e)
+        self._runRebootBtn.setEnabled(e)
+        self._runPoweroffVision.setEnabled(e)
 
     def proc_btn_connect(self):
         if not self._connected:
             try:
-                self._ssh = SSH.SSH(self._host, config.username, config.password)
+                self._ssh = SSH.SSH(self.hostEdit.text(), config.username, config.password)
                 self._shell = self._ssh.create_shell()
                 self._connected = True
-                self._connBtn.setText('Disconnect')
-                self._statusBar.showMessage('connected to {}@{}'.format(config.username, self._host))
-                self._uploadBtn.setEnabled(True)
-                self._downloadBtn.setEnabled(True)
+                self._connBtn.setText('断开连接')
+                self.setOptEnable(True)
+                print(self._ssh.get_remote_time())
+                self._ssh.set_remote_time()
             except Exception as e:
-                self._statusBar.showMessage(e.args[0])
+                print(e.args)
         else:
             self._ssh.close()
             self._connected = False
-            self._connBtn.setText('Connect')
-            self._statusBar.showMessage('')
+            self._connBtn.setText('连接')
             self._ssh = None
             self._shell = None
-            self._uploadBtn.setEnabled(False)
-            self._downloadBtn.setEnabled(False)
+            self.setOptEnable(False)
 
-    def proc_btn_add_term(self):
-        if not self._connected:
+    def proc_btn_upload_srcs(self):
+        srcs = []
+        for box in self._srcCheckBoxes:
+            if box.isChecked():
+                srcs.append(box.text())
+        if len(srcs) == 0:
             return
-        terminal = TerminalWidget(self._ssh.create_shell())
-        self._tabWidget.addTab(terminal, "Terminal")
-        self._tabWidget.setCurrentIndex(self._tabWidget.count()-1)
+        target = 'srcs.tar.gz'
+        cmd = 'cd {root}/src; tar czvf {root}/{target} {srcs}'.format(root=config.local_root,
+                                                                      target=target, srcs=' '.join(srcs))
+        ret, out, err = common.run_cmd(cmd)
+        if not ret:
+            return
+        self._ssh.upload(config.local_root + '/' + target, config.remote_root + '/' + target, self.transport_status)
+        self._shell.exec_command('cd {}'.format(config.remote_root))
+        self._shell.exec_command('tar -zxvf {} -C src/'.format(target))
 
-    def proc_btn_rm_term(self):
-        self._tabWidget.removeTab(self._tabWidget.currentIndex())
+    def proc_btn_build(self):
+        cmdlist = ['cd {}'.format(config.remote_root),
+                   'source /home/{}/.bashrc'.format(config.username),
+                   'catkin_make --pkg common',
+                   'catkin_make']
+        self._recv_threads.append(self._ssh.exec_command(cmdlist))
 
-    def transport_status(self, trans, total):
-        self._statusBar.showMessage("transport: {:.2f}%".format(float(trans)/total*100))
+    def proc_btn_run_debug(self):
+        cmdlist = ['cd {}'.format(config.remote_root),
+                   'source /home/{}/.bashrc'.format(config.username),
+                   'source devel/setup.bash',
+                   'roslaunch start start_debug_server.launch']
+        self._recv_threads.append(self._ssh.exec_command(cmdlist))
+
+    def proc_btn_run_robot(self):
+        cmdlist = ['cd {}'.format(config.remote_root),
+                   'source /home/{}/.bashrc'.format(config.username),
+                   'source devel/setup.bash',
+                   'roslaunch start start_robot.launch']
+        self._recv_threads.append(self._ssh.exec_command(cmdlist))
+
+    def proc_btn_run_remote(self):
+        cmdlist = ['cd {}'.format(config.remote_root),
+                   'source /home/{}/.bashrc'.format(config.username),
+                   'source devel/setup.bash',
+                   'roslaunch start start_robot_remote.launch']
+        self._recv_threads.append(self._ssh.exec_command(cmdlist))
+
+    def proc_btn_run_no_vision(self):
+        cmdlist = ['cd {}'.format(config.remote_root),
+                   'source /home/{}/.bashrc'.format(config.username),
+                   'source devel/setup.bash',
+                   'roslaunch start start_robot_without_vision.launch']
+        self._recv_threads.append(self._ssh.exec_command(cmdlist))
+
+    def proc_btn_reboot(self):
+        shell = self._ssh.create_shell()
+        shell.exec_command('reboot')
+
+    def proc_btn_power_off(self):
+        shell = self._ssh.create_shell()
+        shell.exec_command('poweroff')
+
+    def transport_status(self, transd, total):
+        self.trans.emit(transd, total)
+
+    def on_tran(self, transd, total):
+        self._processBar.setValue(int(float(transd) / total * 100))
         QtWidgets.QApplication.processEvents()
 
-    def proc_btn_upload(self):
-        if self._ssh is None:
-            return
-        local = self._uploadLocalLine.text()
-        if not self._ulRealCheck.isChecked():
-            local = config.local_root + '/' + local
-        remote = self._uploadRemoteLine.text()
-        if not self._urRealCheck.isChecked():
-            remote = config.remote_root + '/' + remote
-        self._outputBox.append('upload file from [{}] to [{}] begin'.format(local, remote))
-        self._ssh.upload(local, remote, self.transport_status)
-        self._outputBox.append('upload file from [{}] to [{}] complete '.format(local, remote))
-        self._statusBar.showMessage('connected to {}@{}'.format(config.username, self._host))
+    def terminate(self):
+        for t in self._recv_threads:
+            t.terminate()
+            t.join()
 
-    def proc_btn_download(self):
-        if self._ssh is None:
-            return
-        local = self._downloadLocalLine.text()
-        if not self._dlRealCheck.isChecked():
-            local = config.local_root + '/' + local
-        remote = self._downloadRemoteLine.text()
-        if not self._drRealCheck.isChecked():
-            remote = config.remote_root + '/' + remote
-        self._outputBox.append('download file from [{}] to [{}] begin'.format(remote, local))
-        self._ssh.download(remote, local, self.transport_status)
-        self._outputBox.append('download file from [{}] to [{}] complete'.format(remote, local))
-        self._statusBar.showMessage('connected to {}@{}'.format(config.username, self._host))
-        
-    def closeEvent(self, event):
-        if not self._ssh is None:
-            self._ssh.close()
-        self.closed.emit(self._id)
-        
-class StartDlg(QtWidgets.QMainWindow):
+
+class EasyWindow(QtWidgets.QMainWindow):
     def __init__(self):
-        super().__init__()
-        self._idSpin = QtWidgets.QSpinBox()
-        self._idSpin.setRange(0, 5)
-        startBtn = QtWidgets.QPushButton('Create New')
-        startBtn.clicked.connect(self.start_new)
-        mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.addWidget(self._idSpin)
-        mainLayout.addWidget(startBtn)
-        mainWidget = QtWidgets.QWidget()
-        mainWidget.setLayout(mainLayout)
-        self.setCentralWidget(mainWidget)
-        self.windows = {}
+        super(EasyWindow, self).__init__()
+        self.setWindowTitle('快捷使用')
+        self.tabWidget = QtWidgets.QTabWidget()
+        self.setCentralWidget(self.tabWidget)
+        self._widgets = []
+        players = common.get_config(config.conf_file, 'players')
+        for player_id in players.keys():
+            widget = OptionWidget(players[player_id]['address'])
+            self.tabWidget.addTab(widget, '{}号机器人'.format(int(player_id)))
+            self._widgets.append(widget)
 
-    def close_window(self, idx):
-        pass
-        #if idx in self.windows.keys():
-        #    self.windows.pop(idx)
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        for widget in self._widgets:
+            widget.terminate()
 
-    def start_new(self):
-        idx = self._idSpin.text()
-        self.windows[idx] = EasyWindow(idx)
-        self.windows[idx].closed.connect(self.close_window)
-        self.windows[idx].showNormal()
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    dlg = StartDlg()
-    dlg.show()
+    app.processEvents()
+    window = EasyWindow()
+    window.show()
     sys.exit(app.exec_())

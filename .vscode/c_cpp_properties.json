@@ -18,6 +18,7 @@
                 "${workspaceFolder}/src/libraries/seumath/include/**",
                 "${workspaceFolder}/src/libraries/seuimage/include/**",
                 "${workspaceFolder}/src/libraries/darknet/include/**",
+                "${workspaceFolder}/src/debuger/include/**",
                 "${workspaceFolder}/src/tools/ui/include/**"
             ],
             "defines": [

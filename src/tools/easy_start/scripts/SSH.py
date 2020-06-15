@@ -1,6 +1,27 @@
 import paramiko
 import socket
-import re
+import threading
+import datetime
+
+
+class ReadThread(threading.Thread):
+    def __init__(self, shell):
+        super(ReadThread, self).__init__()
+        self._shell = shell
+        self._shell.settimeout(0.2)
+        self.__running = threading.Event()
+        self.__running.set()
+
+    def terminate(self):
+        self.__running.clear()
+
+    def run(self):
+        while self.__running.isSet():
+            try:
+                x = self._shell.recv(1)
+                print(x.decode('utf-8', 'ignore'), end='')
+            except socket.timeout:
+                pass
 
 
 class Shell:
@@ -10,18 +31,18 @@ class Shell:
 
     def exec_command(self, cmd):
         ret = ""
-        try:
-            self._shell.send(cmd+'\n')
-            x = "  "
-            while len(x) > 0:
-                x =self._shell.recv(1)
+        self._shell.send(cmd+'\n')
+        x = "  "
+        while len(x) > 0:
+            try:
+                x = self._shell.recv(1)
                 print(x.decode('utf-8', 'ignore'), end='')
                 ret = ret + x.decode('utf-8', 'ignore')
-            ret = self._del_color(ret)
-            return ret
-        except socket.timeout:
-            ret = self._del_color(ret)
-            return "socket timeout" if len(ret) == 0 else ret
+            except socket.timeout:
+                ret = self._del_color(ret)
+                return "socket timeout" if len(ret) == 0 else ret
+        ret = self._del_color(ret)
+        return ret
 
     def _del_color(self, s):
         ret = ''
@@ -76,3 +97,26 @@ class SSH:
         status = self.transport_status if callback is None else callback
         self._sftp.get(remote, local, status)
         print('\ndownload file complete')
+
+    def exec_command(self, cmdlist):
+        shell = self._client.invoke_shell()
+        for cmd in cmdlist:
+            shell.send(cmd + '\n')
+        recv_t = ReadThread(shell)
+        recv_t.start()
+        return recv_t
+
+    def exec_for_result(self, cmd):
+        stdin, stdout, stderr = self._client.exec_command(cmd)
+        stdin.close()
+        return stdout.readlines()
+
+    def get_remote_time(self):
+        cmd = "date '+%Y-%m-%d %H:%M:%S'"
+        return self.exec_for_result(cmd)[0]
+
+    def set_remote_time(self):
+        cmd = "date -s '{}'".format(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        self._client.exec_command(cmd)
+
+

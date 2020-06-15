@@ -80,7 +80,8 @@
         "valarray": "cpp",
         "qtwidgets": "cpp",
         "variant": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "qjsonobject": "cpp"
     },
-    "python.pythonPath": "/usr/bin/python2"
+    "python.pythonPath": "/usr/bin/python"
 }

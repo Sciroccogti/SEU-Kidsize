@@ -13,11 +13,13 @@
     + libeigen3-dev
     + MVSDK (摄像头SDK)  
     + rosbridge_server
-    + web_video_server
 
-- Python
+- Python3
     + paramiko  
-    + flask
+    + PyQt5  
+    + pydot  
+    + pygraphviz  
+    + roslibpy  
 
 - 仿真环境  
     + Webots(安装位置必须是/usr/local/webots)  
@@ -45,8 +47,8 @@
 
 ## 目录说明  
 + common: 数据结构定义  
-+ communication: 比赛控制器通信  
 + config: 配置文件存放及解析  
++ gamectrl: 比赛控制器通信  
 + libraries: 自己实现的库  
     - seuimage: 图像处理相关  
     - seumath: 基于Eigen的数学库  
@@ -56,6 +58,11 @@
 + player: 机器人控制器  
 + vision: 机器人视觉  
 + control: 机器人决策控制  
-+ simulation: 基于Webots的仿真系统  
 + tools: 机器人调试工具  
+    - simulation: 基于Webots的仿真系统  
+    - action: 动作调试  
+    - debuger: 基于roslibpy的调试功能整合  
+    - image: 离线图像调试  
+    - team_monitor: 全组机器人状态监测  
+    - easy_start: 快捷启动工具  
 + [start](src/start/start.md): 启动文件 

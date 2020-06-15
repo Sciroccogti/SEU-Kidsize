@@ -12,6 +12,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "action_debuger");
     ros::NodeHandle node;
+    ros::service::waitForService("/debug/action/run");
     QApplication app(argc, argv);
     glutInit(&argc, argv);
     ActionDebuger foo(node);

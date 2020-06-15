@@ -8,7 +8,6 @@ import os
 import hashlib
 
 
-
 def print_error(err):
     print('\033[1;31m %s \033[0m'%err)
 
@@ -31,18 +30,19 @@ def get_json_from_conf(confname=''):
 
 
 def run_cmd(cmd, prt=True):
-    p = subprocess.Popen(cmd, shell=True)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = p.communicate()
     p.wait()
     if p.poll() == 0:
-        return True
+        return True, out.decode('utf-8'), err.decode('utf-8')
     else:
-        return False
+        return False, out.decode('utf-8'), err.decode('utf-8')
         
 
 def get_ip(cfg, id):
     conf = json.loads(get_json_from_conf(cfg))
     try:
-        players =  conf.get('players')
+        players = conf.get('players')
         player = players.get(id)
         return player.get('address')
     except:

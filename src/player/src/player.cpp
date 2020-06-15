@@ -34,7 +34,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "player");
   ros::NodeHandle node;
-  ros::service::waitForService("/getangles");
+  ros::service::waitForService("/get_angles");
   mcu = std::make_shared<Mcu>();
   mcu->open();
   start_clock = get_clock();
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
   ros::Publisher imuPublisher = node.advertise<ImuData>("/sensor/imu", 1);
   ros::Publisher headPublisher = node.advertise<HeadAngles>("/sensor/head", 1);
   ros::Subscriber ledSub = node.subscribe("/task/led", 1, LedTaskUpdate);
-  ros::ServiceServer imuRstService = node.advertiseService("/imurst", ResetImuService);
+  ros::ServiceServer imuRstService = node.advertiseService("/imu_reset", ResetImuService);
   Mcu::McuPacket mcuPkt;
   ImuData imudata;
 
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
             mcu->writePacket(pkt);
           }
           clock_t t1 =clock();
-          ros::service::call("/getangles", getsrv);
+          ros::service::call("/get_angles", getsrv);
           clock_t t2 =clock();
           double t3 = (double)(t2-t1)/CLOCKS_PER_SEC;
           ROS_INFO("%f", t3);

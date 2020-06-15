@@ -3,7 +3,7 @@
 #include <common/SetInt.h>
 #include <common/ImageResult.h>
 #include <common/ImageSnap.h>
-#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CompressedImage.h>
 #include <sensor_msgs/image_encodings.h>
 
 using namespace common;
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     ros::NodeHandle node;
     camera = std::make_shared<TpCamera>(node, "/sensor/image");
     camera->Open();
-    imagePublisher = node.advertise<sensor_msgs::Image>("/result/vision/image", 1);
+    imagePublisher = node.advertise<sensor_msgs::CompressedImage>("/result/vision/compressed", 1);
     resultPublisher = node.advertise<common::ImageResult>("/result/vision/imgproc", 1);
     ros::ServiceServer typeServer = node.advertiseService("/setting/sendtype", SendTypeService);
     ros::ServiceServer imgSnapSrv = node.advertiseService("/debug/image/snap", ImageSnapService);
@@ -144,17 +144,18 @@ void Run(const ros::TimerEvent& event)
 
 void ImagePublish(const cv::Mat &rgb)
 {
-    sensor_msgs::Image image;
+    cv::Mat bgr;
+    cv::cvtColor(rgb, bgr, CV_RGB2BGR);
+    sensor_msgs::CompressedImage image;
+    std::vector<uint8_t> buf;
+    cv::imencode(".jpg", bgr, buf);
     image.header.stamp = ros::Time::now();
-    image.header.frame_id = "camera";
-    image.width = width;
-    image.height = height;
-    image.step = 3 * width;
-    image.encoding = sensor_msgs::image_encodings::RGB8;
-    image.data.resize(3 * width * height);
-    
-    memcpy(&image.data[0], rgb.data, image.data.size());
+    image.header.frame_id = "vision";
+    image.format = "jpeg";
+    image.data.resize(buf.size());
+    memcpy(&image.data[0], &(buf[0]), buf.size());
     imagePublisher.publish(image);
+
 }
 
 bool SendTypeService(SetInt::Request &req, SetInt::Response &res)

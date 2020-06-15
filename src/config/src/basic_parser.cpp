@@ -13,6 +13,7 @@ namespace common
 
         if (!ifs)
         {
+            std::cout << "open [" << filename << "] failed" << std::endl; 
             return false;
         }
 

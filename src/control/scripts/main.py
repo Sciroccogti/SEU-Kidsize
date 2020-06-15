@@ -2,6 +2,7 @@
 #coding: utf-8
 
 import rospy
+import roslib
 import math
 from common.msg import HeadTask, BodyTask, LedTask
 from common.msg import PlayerInfo, ImageResult
@@ -65,6 +66,6 @@ if __name__ == '__main__':
             htask.pitch = searchBallTable[i%len(searchBallTable)][1]
             j = j+1
             
-        bodyTaskPublisher.publish(btask) 
-        headTaskPublisher.publish(htask)           
+        # bodyTaskPublisher.publish(btask) 
+        # headTaskPublisher.publish(htask)           
         rate.sleep()
