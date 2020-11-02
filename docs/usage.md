@@ -20,3 +20,39 @@
 目前的机器人默认 ip 分别为 `192.168.0.131` `192.168.0.132` `192.168.0.133`
 
 也有可能为 `10.42.0.13x`
+
+> 机器人只能连接 2.4GHz 的 WiFi
+> 
+> 扫描子网设备：`arp -a`
+
+## 启动
+
+```Bash
+cd SEU-Kidsize
+sudo apt install ros-melodic-rosbridge-server
+# 若在机器人上编译则须删除 src/tools/simulation 文件夹
+catkin_make # 首次编译可能需要重复四次
+source devel/setup.bash
+roslaunch start start_robot.launch
+```
+
+## tools
+
+以下在电脑上进行
+
+### easy_start
+
+```Bash
+python3 src/tools/easy_start/scripts/easy_start.py
+```
+
+可能需要在 [config.py](../src/tools/easy_start/scripts/config.py) 中修改 用户名和密码
+
+### debuger
+
+```Bash
+sudo apt install graphviz-dev
+pip3 install -r src/tools/debuger/scripts/requirements.txt
+python3 src/tools/debuger/scripts/main.py
+```
+
