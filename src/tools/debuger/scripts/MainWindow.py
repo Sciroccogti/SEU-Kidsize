@@ -134,7 +134,7 @@ class MainWindow(QMainWindow):
                 elif not self.action_debug_client.is_connected:
                     self.action_debug_client.connect()
             except Exception as e:
-                QMessageBox.critical(self, "错误", '无法连接到本地调试器')
+                QMessageBox.critical(self, "错误", '无法连接到本地调试器 %s' % str(e))
                 return
 
         act_service = Service(self.action_debug_client, '/debug/action/run', 'common/AddAngles')

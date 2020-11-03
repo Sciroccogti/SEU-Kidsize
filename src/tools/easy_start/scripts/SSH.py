@@ -65,11 +65,12 @@ class SSH:
         self._client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.connected = False
         try:
-            self._client.connect(hostname, username=username, password=password, timeout=1.0)
+            print("\rconnecting...")
+            self._client.connect(hostname, username=username, password=password, timeout=5.0)
             self.connected = True
             self._sftp = self._client.open_sftp()
-        except:
-            raise Exception("connect to {}@{} failed".format(username, hostname))
+        except Exception as e:
+            raise Exception("connect to {}@{} failed: {}".format(username, hostname, e))
 
     def close(self):
         self._client.close()
