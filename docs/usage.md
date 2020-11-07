@@ -28,7 +28,8 @@
 ## 启动
 
 ```Bash
-cd SEU-Kidsize
+sudo su # 否则无法打开 tty 串口
+cd /home/nvidia/SEU-Kidsize
 sudo apt install ros-melodic-rosbridge-server
 # 若在机器人上编译则须删除 src/tools/simulation 文件夹
 catkin_make # 首次编译可能需要重复四次
