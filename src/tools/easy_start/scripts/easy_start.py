@@ -153,35 +153,35 @@ class OptionWidget(QtWidgets.QWidget):
 
     def proc_btn_build(self):
         cmdlist = ['cd {}'.format(config.remote_root),
-                   'source /home/{}/.bashrc'.format(config.username),
+                   'source /home/nvidia/.bashrc',
                    'catkin_make --pkg common',
                    'catkin_make']
         self._recv_threads.append(self._ssh.exec_command(cmdlist))
 
     def proc_btn_run_debug(self):
         cmdlist = ['cd {}'.format(config.remote_root),
-                   'source /home/{}/.bashrc'.format(config.username),
+                   'source /home/nvidia/.bashrc',
                    'source devel/setup.bash',
                    'roslaunch start start_debug_server.launch']
         self._recv_threads.append(self._ssh.exec_command(cmdlist))
 
     def proc_btn_run_robot(self):
         cmdlist = ['cd {}'.format(config.remote_root),
-                   'source /home/{}/.bashrc'.format(config.username),
+                   'source /home/nvidia/.bashrc',
                    'source devel/setup.bash',
                    'roslaunch start start_robot.launch']
         self._recv_threads.append(self._ssh.exec_command(cmdlist))
 
     def proc_btn_run_remote(self):
         cmdlist = ['cd {}'.format(config.remote_root),
-                   'source /home/{}/.bashrc'.format(config.username),
+                   'source /home/nvidia/.bashrc',
                    'source devel/setup.bash',
                    'roslaunch start start_robot_remote.launch']
         self._recv_threads.append(self._ssh.exec_command(cmdlist))
 
     def proc_btn_run_no_vision(self):
         cmdlist = ['cd {}'.format(config.remote_root),
-                   'source /home/{}/.bashrc'.format(config.username),
+                   'source /home/nvidia/.bashrc',
                    'source devel/setup.bash',
                    'roslaunch start start_robot_without_vision.launch']
         self._recv_threads.append(self._ssh.exec_command(cmdlist))

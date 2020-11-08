@@ -129,9 +129,11 @@ class MainWindow(QMainWindow):
             cmd = 'roslaunch start start_action_debug_robot.launch'
             try:
                 if self.action_debug_client is None:
+                    print("run action_debug_client at 127.0.0.1:9090")
                     self.action_debug_client = Ros('127.0.0.1', 9090)
                     self.action_debug_client.run()
                 elif not self.action_debug_client.is_connected:
+                    print("connecting action debug client")
                     self.action_debug_client.connect()
             except Exception as e:
                 QMessageBox.critical(self, "错误", '无法连接到本地调试器 %s' % str(e))

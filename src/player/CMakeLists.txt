@@ -137,7 +137,8 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 
 set(DEV_FILES src/dev/serial.cpp src/dev/mcu.cpp)
-add_executable(player src/player.cpp ${DEV_FILES})
+set(SKILL_FILES src/skill/skill.cpp)
+add_executable(player src/player.cpp ${DEV_FILES} ${SKILL_FILES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

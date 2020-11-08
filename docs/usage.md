@@ -57,3 +57,10 @@ pip3 install -r src/tools/debuger/scripts/requirements.txt
 python3 src/tools/debuger/scripts/main.py
 ```
 
+### 
+
+- 机器人：`start_robot_remote`
+- 电脑：
+  1. `roscore`
+  2. `rosrun debuger main.py`
+  3. 点击 *动作调试器*，第一次应报错：*无法连接到本地调试器*，第二次运行则正常

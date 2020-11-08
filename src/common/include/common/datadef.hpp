@@ -81,15 +81,14 @@ enum FreeKickStage
     FK_EXECUTE
 };
 
-enum FsmState
-{
-    FSM_STATE_READY,
-    FSM_STATE_GETUP,
-    FSM_STATE_SEARCH_BALL,
-    FSM_STATE_GOTO_BALL,
-    FSM_STATE_KICK_BALL,
-    FSM_STATE_DRIBBLE,
-    FSM_STATE_SL
+enum FsmState {
+    FSM_STATE_READY,        // 0
+    FSM_STATE_GETUP,        // 1
+    FSM_STATE_SEARCH_BALL,  // 2
+    FSM_STATE_GOTO_BALL,    // 3
+    FSM_STATE_KICK_BALL,    // 4
+    FSM_STATE_DRIBBLE,      // 5
+    FSM_STATE_SL            // 6
 };
 
 struct FiledInfo

@@ -202,6 +202,7 @@ class RemoteWidget(QWidget):
                                      'turn': self._turn_slider.value()})
 
     def on_act_task(self):
+        # double click on action!
         if not self.check_connect():
             return
         item = self._acts_widget.currentItem()
