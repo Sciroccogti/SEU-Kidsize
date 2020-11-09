@@ -13,5 +13,5 @@
   <!-- start vision -->
   <node pkg="vision" type="vision" name="vision" output="screen" />
   <!-- start control -->
-  <node pkg="control" type="main.py" name="control" output="screen"/>
+  <node pkg="control" type="control" name="control" output="screen" />
 </launch>
