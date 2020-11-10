@@ -26,7 +26,7 @@ signals:
 
 private:
     void receive();
-    FiledInfo field_;
+    FieldInfo field_;
     std::thread td_;
     mutable std::mutex p_mutex_;
     std::map<int, common::PlayerInfo> players_;

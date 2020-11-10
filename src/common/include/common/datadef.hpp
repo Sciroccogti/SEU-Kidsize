@@ -91,8 +91,7 @@ enum FsmState {
     FSM_STATE_SL            // 6
 };
 
-struct FiledInfo
-{
+struct FieldInfo {
     int field_length;
     int field_width;
     int goal_depth;

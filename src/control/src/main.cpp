@@ -89,10 +89,19 @@ int main(int argc, char **argv) {
                 btask.actname = "ready";
                 break;
 
+            case GC_READY:
+                pinfo.self_x = init_pos[0];
+                pinfo.self_y = init_pos[1];
+
+            case GC_SET:
+                break;
+
             default:
                 btask.type = BodyTask::TASK_ACT;
                 btask.actname = "reset";
-                htask.mode = htask.ModeScanBall;
+                if (!imgResult.has_ball) {
+                    htask.mode = htask.ModeScanBall;
+                }
                 break;
         }
         headTaskPublisher.publish(htask);
@@ -101,51 +110,4 @@ int main(int argc, char **argv) {
         ros::spinOnce();
         rate.sleep();
     }
-
-    // rate = rospy.Rate(20)
-    // lstatus = True
-    // current_state = -1
-    // i = 0
-    // j = 0
-    // while not rospy.is_shutdown():
-    //     htask = HeadTask()
-    //     btask = BodyTask()
-    //     pinfo = PlayerInfo()
-    //     GcUpdate()
-    //     btask.type = BodyTask.TASK_WALK
-    //     btask.count = 2
-    //     btask.step = 0.0
-    //     pinfo.id = id
-
-    //     if gcData.state != current_state:
-    //         current_state = gcData.state
-    //         statestr = stateMap[current_state]
-    //         rospy.loginfo("Enter %s" % statestr)
-
-    //         if statestr == "Initial":
-    //             btask.type = BodyTask.TASK_ACT
-    //             btask.actname = "reset"
-    //             # TODO: read from guard conf
-    //             pinfo.self_x = -3.0
-    //             pinfo.self_y = 0.0
-
-    //         if statestr == "Ready":
-    //             pass
-
-    //     if imgResult.has_ball:
-    //         x = imgResult.ball.x
-    //         y = imgResult.ball.y
-    //         htask.yaw = searchBallTable[i%len(searchBallTable)][0]
-    //         htask.pitch = searchBallTable[i%len(searchBallTable)][1]
-    //     else:
-    //         if j%15 == 0:
-    //             i = i+1
-    //         htask.yaw = searchBallTable[i%len(searchBallTable)][0]
-    //         htask.pitch = searchBallTable[i%len(searchBallTable)][1]
-    //         j = j+1
-
-    //     bodyTaskPublisher.publish(btask)
-    //     headTaskPublisher.publish(htask)
-    //     playerInfoPublisher.publish(pinfo)
-    //     rate.sleep()
 }

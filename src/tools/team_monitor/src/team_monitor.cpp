@@ -7,7 +7,7 @@ using namespace std;
 
 boost::asio::io_service udp_service;
 
-bool parse_field(const std::string &filename, FiledInfo &field)
+bool parse_field(const std::string &filename, FieldInfo &field)
 {
     common::bpt::ptree pt;
     if (!common::get_tree_from_file(filename, pt))
